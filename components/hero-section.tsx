@@ -9,30 +9,112 @@ import { ArrowRight, Zap, Shield, RefreshCw } from "lucide-react"
 
 export function HeroSection() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [isMounted, setIsMounted] = useState(false)
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
+    setIsMounted(true)
+
+    // Set initial window size
+    setWindowSize({
+      width: window.innerWidth,
+      height: window.innerHeight,
+    })
+
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY })
     }
 
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+    }
+
     window.addEventListener("mousemove", handleMouseMove)
-    return () => window.removeEventListener("mousemove", handleMouseMove)
+    window.addEventListener("resize", handleResize)
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove)
+      window.removeEventListener("resize", handleResize)
+    }
   }, [])
 
-  const calculateTransform = (x: number, y: number, strength = 10) => {
-    const centerX = window.innerWidth / 2
-    const centerY = window.innerHeight / 2
+  // Safe transform calculation that returns string values for CSS
+  const getTransformStyle = (x: number, y: number, strength = 10) => {
+    if (!isMounted || windowSize.width === 0) {
+      return {}
+    }
+
+    const centerX = windowSize.width / 2
+    const centerY = windowSize.height / 2
+
+    const deltaX = (x - centerX) / centerX
+    const deltaY = (y - centerY) / centerY
+
+    // Convert to pixel values as strings to avoid object-to-primitive conversion issues
+    const translateX = `${deltaX * strength}px`
+    const translateY = `${deltaY * strength}px`
+
+    return {
+      transform: `translate(${translateX}, ${translateY})`,
+    }
+  }
+
+  // Background element transform
+  const getBackgroundTransform = () => {
+    if (!isMounted) return {}
+
+    const x = mousePosition.x
+    const y = mousePosition.y
+
+    const centerX = windowSize.width / 2
+    const centerY = windowSize.height / 2
 
     const deltaX = (x - centerX) / centerX
     const deltaY = (y - centerY) / centerY
 
     return {
-      x: deltaX * strength,
-      y: deltaY * strength,
+      transform: `translate(calc(-50% + ${deltaX * 2}px), calc(-50% + ${deltaY * 2}px))`,
     }
   }
 
-  const transform = calculateTransform(mousePosition.x, mousePosition.y)
+  // Image transform
+  const getImageTransform = () => {
+    if (!isMounted) return {}
+
+    const x = mousePosition.x
+    const y = mousePosition.y
+
+    const centerX = windowSize.width / 2
+    const centerY = windowSize.height / 2
+
+    const deltaX = (x - centerX) / centerX
+    const deltaY = (y - centerY) / centerY
+
+    return {
+      transform: `translate(${deltaX * -0.5}px, ${deltaY * -0.5}px)`,
+    }
+  }
+
+  // Floating element transform
+  const getFloatingElementTransform = () => {
+    if (!isMounted) return {}
+
+    const x = mousePosition.x
+    const y = mousePosition.y
+
+    const centerX = windowSize.width / 2
+    const centerY = windowSize.height / 2
+
+    const deltaX = (x - centerX) / centerX
+    const deltaY = (y - centerY) / centerY
+
+    return {
+      transform: `translate(${deltaX * 0.8}px, ${deltaY * 0.8}px)`,
+    }
+  }
 
   return (
     <section className="relative overflow-hidden py-20 md:py-32">
@@ -40,9 +122,7 @@ export function HeroSection() {
       <div className="absolute inset-0 grid-pattern opacity-20" />
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 blur-[100px]"
-        style={{
-          transform: `translate(calc(-50% + ${transform.x * 2}px), calc(-50% + ${transform.y * 2}px))`,
-        }}
+        style={getBackgroundTransform()}
       />
 
       <div className="container relative z-10">
@@ -96,7 +176,7 @@ export function HeroSection() {
             <Button size="lg" variant="outline" className="border-white/20 hover:bg-white/10">
               <Link href="/demo">Request Demo</Link>
             </Button>
-            <Button size="lg" className="bg-gradient-to-r from-neon-green to-neon-blue hover:opacity-90 animate-pulse">
+            <Button size="lg" className="bg-gradient-to-r from-neon-green to-neon-blue hover:opacity-90">
               <Link href="/dashboard" className="flex items-center">
                 Dashboard Demo <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -152,9 +232,7 @@ export function HeroSection() {
                 alt="Prime Phygital Platform Dashboard"
                 fill
                 className="object-cover"
-                style={{
-                  transform: `translate(${transform.x * -0.5}px, ${transform.y * -0.5}px)`,
-                }}
+                style={getImageTransform()}
               />
             </div>
           </div>
@@ -162,15 +240,11 @@ export function HeroSection() {
           {/* Floating elements */}
           <div
             className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-neon-purple/30 blur-xl"
-            style={{
-              transform: `translate(${transform.x * 0.8}px, ${transform.y * 0.8}px)`,
-            }}
+            style={getFloatingElementTransform()}
           />
           <div
             className="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-neon-blue/30 blur-xl"
-            style={{
-              transform: `translate(${transform.x * 0.8}px, ${transform.y * 0.8}px)`,
-            }}
+            style={getFloatingElementTransform()}
           />
         </motion.div>
       </div>

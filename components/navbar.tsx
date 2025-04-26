@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -8,35 +8,37 @@ import { Menu, X, ChevronDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Image from "next/image"
 
-// Add a check to prevent duplicate rendering
-const NAVBAR_MOUNTED_KEY = "navbar-mounted"
+// Create a global variable to track if navbar is already rendered
+let isNavbarRendered = false
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const navbarRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
-    // Check if navbar is already mounted
-    if (window[NAVBAR_MOUNTED_KEY as any]) {
-      setMounted(false)
+    // Check if we should render this navbar
+    if (isNavbarRendered) {
       return
     }
 
-    // Mark navbar as mounted
-    window[NAVBAR_MOUNTED_KEY as any] = true
+    // Mark as mounted and rendered
     setMounted(true)
+    isNavbarRendered = true
 
     return () => {
-      // Clean up when component unmounts
-      window[NAVBAR_MOUNTED_KEY as any] = false
+      // Reset when unmounted
+      if (navbarRef.current) {
+        isNavbarRendered = false
+      }
     }
   }, [])
 
-  // Don't render if already mounted elsewhere
+  // Don't render if not mounted or already rendered elsewhere
   if (!mounted) return null
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-black/50 backdrop-blur-xl">
+    <header ref={navbarRef} className="sticky top-0 z-50 w-full border-b border-border/40 bg-black/50 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
