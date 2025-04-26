@@ -69,7 +69,12 @@ export default function AboutPage() {
 
               <div className="glass-panel neon-border overflow-hidden rounded-lg">
                 <div className="relative aspect-square">
-                  <Image src="/blockchain-nfc-collaboration.png" alt="Prime Phygital Team" fill className="object-cover" />
+                  <Image
+                    src="/blockchain-nfc-collaboration.png"
+                    alt="Prime Phygital Team"
+                    fill
+                    className="object-cover"
+                  />
                 </div>
               </div>
             </div>

@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Shield, ChevronRight, Lock } from "lucide-react"
+import Link from "next/link"
 
 export default function SettingsPage() {
   return (
@@ -87,6 +89,54 @@ export default function SettingsPage() {
               </Button>
             </CardFooter>
           </Card>
+
+          <Link href="/dashboard/settings/verification" className="block">
+            <Card className="glass-panel border-white/10 hover:bg-white/5 transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-neon-blue" />
+                  Verification Settings
+                </CardTitle>
+                <CardDescription>Configure product and service verification methods</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-white/70">
+                  Choose from multiple verification methods including blockchain, digital signatures, NFC, and
+                  biometrics.
+                </p>
+              </CardContent>
+              <CardFooter className="border-t border-white/10 pt-4">
+                <div className="flex justify-between items-center w-full">
+                  <span className="text-sm text-white/50">8 verification methods available</span>
+                  <ChevronRight className="h-5 w-5 text-white/50" />
+                </div>
+              </CardFooter>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard/settings/permissions" className="block">
+            <Card className="glass-panel border-white/10 hover:bg-white/5 transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5 text-neon-purple" />
+                  User Permissions
+                </CardTitle>
+                <CardDescription>Manage user roles and access permissions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-white/70">
+                  Configure role-based access control, create custom roles, and manage user permissions across the
+                  platform.
+                </p>
+              </CardContent>
+              <CardFooter className="border-t border-white/10 pt-4">
+                <div className="flex justify-between items-center w-full">
+                  <span className="text-sm text-white/50">5 roles and 13 permissions available</span>
+                  <ChevronRight className="h-5 w-5 text-white/50" />
+                </div>
+              </CardFooter>
+            </Card>
+          </Link>
         </TabsContent>
 
         <TabsContent value="appearance" className="space-y-6">
@@ -116,12 +166,24 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="dark-mode">Dark Mode</Label>
-                <Switch id="dark-mode" defaultChecked />
+                <Switch
+                  id="dark-mode"
+                  defaultChecked={true}
+                  onCheckedChange={() => {
+                    // Handle dark mode toggle
+                  }}
+                />
               </div>
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="animations">Enable Animations</Label>
-                <Switch id="animations" defaultChecked />
+                <Switch
+                  id="animations"
+                  defaultChecked={true}
+                  onCheckedChange={() => {
+                    // Handle animations toggle
+                  }}
+                />
               </div>
             </CardContent>
             <CardFooter>
@@ -145,7 +207,12 @@ export default function SettingsPage() {
                     <p className="font-medium">Product Scans</p>
                     <p className="text-sm text-white/70">Receive notifications when your products are scanned</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch
+                    defaultChecked={true}
+                    onCheckedChange={() => {
+                      // Handle notification toggle
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -153,7 +220,12 @@ export default function SettingsPage() {
                     <p className="font-medium">New Customers</p>
                     <p className="text-sm text-white/70">Receive notifications when new customers register</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch
+                    defaultChecked={true}
+                    onCheckedChange={() => {
+                      // Handle notification toggle
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -161,7 +233,12 @@ export default function SettingsPage() {
                     <p className="font-medium">Security Alerts</p>
                     <p className="text-sm text-white/70">Receive notifications about security events</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch
+                    defaultChecked={true}
+                    onCheckedChange={() => {
+                      // Handle notification toggle
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -169,7 +246,12 @@ export default function SettingsPage() {
                     <p className="font-medium">Marketing Updates</p>
                     <p className="text-sm text-white/70">Receive updates about new features and promotions</p>
                   </div>
-                  <Switch />
+                  <Switch
+                    defaultChecked={false}
+                    onCheckedChange={() => {
+                      // Handle notification toggle
+                    }}
+                  />
                 </div>
               </div>
             </CardContent>

@@ -1,28 +1,27 @@
 import type React from "react"
+import "./globals.css"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Prime Phygital | NFC Tokenization Platform",
-  description: "Connect physical products to the digital world with NFC tokenization and blockchain integration",
+  title: "Prime Phygital Platform",
+  description: "Connect physical products to digital experiences",
     generator: 'v0.dev'
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} bg-black text-white antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
-          {children}
-        </ThemeProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        {children}
+        <Toaster />
       </body>
     </html>
   )

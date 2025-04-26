@@ -1,32 +1,52 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu, X, ChevronDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import Image from "next/image"
+
+// Add a check to prevent duplicate rendering
+const NAVBAR_MOUNTED_KEY = "navbar-mounted"
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    // Check if navbar is already mounted
+    if (window[NAVBAR_MOUNTED_KEY as any]) {
+      setMounted(false)
+      return
+    }
+
+    // Mark navbar as mounted
+    window[NAVBAR_MOUNTED_KEY as any] = true
+    setMounted(true)
+
+    return () => {
+      // Clean up when component unmounts
+      window[NAVBAR_MOUNTED_KEY as any] = false
+    }
+  }, [])
+
+  // Don't render if already mounted elsewhere
+  if (!mounted) return null
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-black/50 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="relative h-8 w-8">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-neon-purple via-neon-blue to-neon-green opacity-70 blur-sm" />
-              <div className="relative flex h-full w-full items-center justify-center rounded-full bg-black">
-                <span className="text-xl font-bold text-white">P</span>
-              </div>
-            </div>
-            <span className="text-xl font-bold tracking-tight">
-              Prime
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-blue">
-                Phygital
-              </span>
-            </span>
+            <Image
+              src="/prime-phygital-logo.png"
+              alt="PrimePhygital Logo"
+              width={150}
+              height={30}
+              className="h-8 w-auto"
+            />
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
@@ -128,18 +148,13 @@ export function Navbar() {
           <SheetContent side="left" className="glass-panel border-r border-white/10">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
-                <div className="relative h-8 w-8">
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-neon-purple via-neon-blue to-neon-green opacity-70 blur-sm" />
-                  <div className="relative flex h-full w-full items-center justify-center rounded-full bg-black">
-                    <span className="text-xl font-bold text-white">P</span>
-                  </div>
-                </div>
-                <span className="text-xl font-bold tracking-tight">
-                  Prime
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-blue">
-                    Phygital
-                  </span>
-                </span>
+                <Image
+                  src="/prime-phygital-logo.png"
+                  alt="PrimePhygital Logo"
+                  width={150}
+                  height={30}
+                  className="h-8 w-auto"
+                />
               </Link>
               <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
                 <X className="h-6 w-6" />

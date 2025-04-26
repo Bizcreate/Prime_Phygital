@@ -49,6 +49,7 @@ export default function CreateProduct() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
   const [productImage, setProductImage] = useState<string | null>(null)
 
   // Form state for non-form components
@@ -66,9 +67,24 @@ export default function CreateProduct() {
   const [privacyLevel, setPrivacyLevel] = useState("balanced")
   const [anonymousScans, setAnonymousScans] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const [showTemplates, setShowTemplates] = useState(false)
   const [newTemplate, setNewTemplate] = useState({ name: "", description: "" })
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  // Service history tracking
+  const [enableServiceHistory, setEnableServiceHistory] = useState(false)
+  const [serviceHistoryType, setServiceHistoryType] = useState("standard")
+  const [serviceVerification, setServiceVerification] = useState("brand")
+
+  // Mining and rewards
+  const [enableMining, setEnableMining] = useState(false)
+  const [miningMethod, setMiningMethod] = useState("nfc")
+  const [rewardToken, setRewardToken] = useState("")
+  const [rewardRate, setRewardRate] = useState("1")
+
+  // Community features
+  const [enableCommunity, setEnableCommunity] = useState(false)
+  const [communityType, setCommunityType] = useState("open")
+  const [membershipRequirements, setMembershipRequirements] = useState("ownership")
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -82,6 +98,17 @@ export default function CreateProduct() {
 
   // Get current form values for preview
   const currentValues = form.watch()
+
+  // Toggle functions for the buttons
+  const toggleTemplates = () => {
+    setShowTemplates(!showTemplates)
+    if (showPreview && !showTemplates) setShowPreview(false)
+  }
+
+  const togglePreview = () => {
+    setShowPreview(!showPreview)
+    if (showTemplates && !showPreview) setShowTemplates(false)
+  }
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
@@ -103,6 +130,16 @@ export default function CreateProduct() {
       privacyLevel,
       anonymousScans,
       image: productImage,
+      enableServiceHistory,
+      serviceHistoryType,
+      serviceVerification,
+      enableMining,
+      miningMethod,
+      rewardToken,
+      rewardRate,
+      enableCommunity,
+      communityType,
+      membershipRequirements,
     }
 
     // Simulate API call
@@ -114,7 +151,7 @@ export default function CreateProduct() {
   }
 
   const nextStep = () => {
-    setCurrentStep((prev) => Math.min(prev + 1, 4))
+    setCurrentStep((prev) => Math.min(prev + 1, 5)) // Updated to 5 steps
   }
 
   const prevStep = () => {
@@ -141,16 +178,39 @@ export default function CreateProduct() {
     form.setValue("blockchain", template.blockchain)
 
     // Apply template values to state
-    setNftType(template.nftType)
-    setNfcContent(template.nfcContent)
-    setTransferable(template.transferable)
-    setTheftProtection(template.theftProtection)
-    setHistoryTracking(template.historyTracking)
-    setWearToEarn(template.wearToEarn)
-    setSocialSharing(template.socialSharing)
-    setCommunityAccess(template.communityAccess)
-    setPrivacyLevel(template.privacyLevel)
+    setNftType(template.nftType || "erc1155")
+    setNfcContent(template.nfcContent || "url")
+    setTransferable(template.transferable !== undefined ? template.transferable : true)
+    setTheftProtection(template.theftProtection !== undefined ? template.theftProtection : true)
+    setHistoryTracking(template.historyTracking !== undefined ? template.historyTracking : true)
+    setWearToEarn(template.wearToEarn !== undefined ? template.wearToEarn : false)
+    setSocialSharing(template.socialSharing !== undefined ? template.socialSharing : false)
+    setCommunityAccess(template.communityAccess !== undefined ? template.communityAccess : false)
+    setPrivacyLevel(template.privacyLevel || "balanced")
 
+    // Apply service history settings if available
+    if (template.enableServiceHistory !== undefined) {
+      setEnableServiceHistory(template.enableServiceHistory)
+      setServiceHistoryType(template.serviceHistoryType || "standard")
+      setServiceVerification(template.serviceVerification || "brand")
+    }
+
+    // Apply mining settings if available
+    if (template.enableMining !== undefined) {
+      setEnableMining(template.enableMining)
+      setMiningMethod(template.miningMethod || "nfc")
+      setRewardToken(template.rewardToken || "")
+      setRewardRate(template.rewardRate || "1")
+    }
+
+    // Apply community settings if available
+    if (template.enableCommunity !== undefined) {
+      setEnableCommunity(template.enableCommunity)
+      setCommunityType(template.communityType || "open")
+      setMembershipRequirements(template.membershipRequirements || "ownership")
+    }
+
+    // Close templates panel
     setShowTemplates(false)
   }
 
@@ -165,20 +225,14 @@ export default function CreateProduct() {
           <Button
             variant="outline"
             className={`border-white/10 ${showTemplates ? "bg-white/10" : ""}`}
-            onClick={() => {
-              setShowTemplates(!showTemplates)
-              if (showPreview && !showTemplates) setShowPreview(false)
-            }}
+            onClick={toggleTemplates}
           >
             Templates
           </Button>
           <Button
             variant="outline"
             className={`border-white/10 ${showPreview ? "bg-white/10" : ""}`}
-            onClick={() => {
-              setShowPreview(!showPreview)
-              if (showTemplates && !showPreview) setShowTemplates(false)
-            }}
+            onClick={togglePreview}
           >
             <Eye className="mr-2 h-4 w-4" />
             {showPreview ? "Hide Preview" : "Show Preview"}
@@ -237,16 +291,27 @@ export default function CreateProduct() {
                     currentStep >= 4 ? "bg-neon-purple border-neon-purple" : "bg-white/5 border-white/20"
                   }`}
                 >
-                  <span>4</span>
+                  {currentStep > 4 ? <Check className="h-5 w-5" /> : <span>4</span>}
                 </div>
                 <span className="mt-2 text-sm font-medium">Asset Vault</span>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div
+                  className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 ${
+                    currentStep >= 5 ? "bg-neon-purple border-neon-purple" : "bg-white/5 border-white/20"
+                  }`}
+                >
+                  <span>5</span>
+                </div>
+                <span className="mt-2 text-sm font-medium">Community & Mining</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          <div className={`${showPreview ? "lg:w-1/2" : "w-full"}`}>
+          <div className={`${showPreview || showTemplates ? "lg:w-1/2" : "w-full"}`}>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 {currentStep === 1 && (
@@ -316,6 +381,9 @@ export default function CreateProduct() {
                                   <SelectItem value="accessory">Accessory</SelectItem>
                                   <SelectItem value="electronics">Electronics</SelectItem>
                                   <SelectItem value="collectible">Collectible</SelectItem>
+                                  <SelectItem value="watch">Luxury Watch</SelectItem>
+                                  <SelectItem value="vehicle">Vehicle</SelectItem>
+                                  <SelectItem value="realestate">Real Estate</SelectItem>
                                   <SelectItem value="other">Other</SelectItem>
                                 </SelectContent>
                               </Select>
@@ -710,6 +778,68 @@ export default function CreateProduct() {
                       </div>
 
                       <div>
+                        <h3 className="text-lg font-semibold mb-4">Service History Tracking</h3>
+                        <div className="flex items-start mb-4">
+                          <div className="flex h-5 items-center">
+                            <input
+                              id="enable-service-history"
+                              type="checkbox"
+                              checked={enableServiceHistory}
+                              onChange={(e) => setEnableServiceHistory(e.target.checked)}
+                              className="h-4 w-4 rounded border-white/20 bg-white/5 text-neon-purple focus:ring-neon-purple"
+                            />
+                          </div>
+                          <div className="ml-3">
+                            <label htmlFor="enable-service-history" className="font-medium">
+                              Enable Service History
+                            </label>
+                            <p className="text-sm text-white/70">
+                              Track maintenance, repairs, and service records for this product
+                            </p>
+                          </div>
+                        </div>
+
+                        {enableServiceHistory && (
+                          <div className="space-y-4 pl-7">
+                            <div>
+                              <label htmlFor="service-history-type" className="block text-sm font-medium mb-1">
+                                Service History Type
+                              </label>
+                              <select
+                                id="service-history-type"
+                                value={serviceHistoryType}
+                                onChange={(e) => setServiceHistoryType(e.target.value)}
+                                className="w-full rounded-md bg-white/5 border-white/10 py-2 px-3 text-sm"
+                              >
+                                <option value="standard">Standard (General Service Records)</option>
+                                <option value="watch">Watch Service (Maintenance, Certification)</option>
+                                <option value="vehicle">Vehicle Service (Repairs, Mileage, Parts)</option>
+                                <option value="realestate">Real Estate (Improvements, Inspections)</option>
+                                <option value="custom">Custom Service Records</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label htmlFor="service-verification" className="block text-sm font-medium mb-1">
+                                Service Verification Method
+                              </label>
+                              <select
+                                id="service-verification"
+                                value={serviceVerification}
+                                onChange={(e) => setServiceVerification(e.target.value)}
+                                className="w-full rounded-md bg-white/5 border-white/10 py-2 px-3 text-sm"
+                              >
+                                <option value="brand">Brand Verified Only</option>
+                                <option value="authorized">Authorized Service Providers</option>
+                                <option value="owner">Owner Verified</option>
+                                <option value="community">Community Verified</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
                         <h3 className="text-lg font-semibold mb-4">Royalties</h3>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -941,6 +1071,213 @@ export default function CreateProduct() {
                         Previous
                       </Button>
                       <Button
+                        type="button"
+                        onClick={nextStep}
+                        className="bg-gradient-to-r from-neon-purple to-neon-blue hover:opacity-90"
+                      >
+                        Next Step <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                )}
+
+                {currentStep === 5 && (
+                  <Card className="glass-panel border-white/10">
+                    <CardHeader>
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="rounded-full bg-white/10 p-2">
+                          <Database className="h-5 w-5" />
+                        </div>
+                        <CardTitle>Community & Mining</CardTitle>
+                      </div>
+                      <CardDescription>Configure community features and token mining options</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">Community Features</h3>
+                        <div className="flex items-start mb-4">
+                          <div className="flex h-5 items-center">
+                            <input
+                              id="enable-community"
+                              type="checkbox"
+                              checked={enableCommunity}
+                              onChange={(e) => setEnableCommunity(e.target.checked)}
+                              className="h-4 w-4 rounded border-white/20 bg-white/5 text-neon-purple focus:ring-neon-purple"
+                            />
+                          </div>
+                          <div className="ml-3">
+                            <label htmlFor="enable-community" className="font-medium">
+                              Enable Community Features
+                            </label>
+                            <p className="text-sm text-white/70">
+                              Create a community around your product with exclusive benefits
+                            </p>
+                          </div>
+                        </div>
+
+                        {enableCommunity && (
+                          <div className="space-y-4 pl-7">
+                            <div>
+                              <label htmlFor="community-type" className="block text-sm font-medium mb-1">
+                                Community Type
+                              </label>
+                              <select
+                                id="community-type"
+                                value={communityType}
+                                onChange={(e) => setCommunityType(e.target.value)}
+                                className="w-full rounded-md bg-white/5 border-white/10 py-2 px-3 text-sm"
+                              >
+                                <option value="open">Open Community (Anyone can join)</option>
+                                <option value="gated">Gated Community (Ownership required)</option>
+                                <option value="tiered">Tiered Access (Based on engagement)</option>
+                                <option value="invite">Invite Only (Exclusive access)</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label htmlFor="membership-requirements" className="block text-sm font-medium mb-1">
+                                Membership Requirements
+                              </label>
+                              <select
+                                id="membership-requirements"
+                                value={membershipRequirements}
+                                onChange={(e) => setMembershipRequirements(e.target.value)}
+                                className="w-full rounded-md bg-white/5 border-white/10 py-2 px-3 text-sm"
+                              >
+                                <option value="ownership">Product Ownership</option>
+                                <option value="token">Token Holding</option>
+                                <option value="activity">Activity Level</option>
+                                <option value="custom">Custom Requirements</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">Token Mining & Rewards</h3>
+                        <div className="flex items-start mb-4">
+                          <div className="flex h-5 items-center">
+                            <input
+                              id="enable-mining"
+                              type="checkbox"
+                              checked={enableMining}
+                              onChange={(e) => setEnableMining(e.target.checked)}
+                              className="h-4 w-4 rounded border-white/20 bg-white/5 text-neon-purple focus:ring-neon-purple"
+                            />
+                          </div>
+                          <div className="ml-3">
+                            <label htmlFor="enable-mining" className="font-medium">
+                              Enable Token Mining
+                            </label>
+                            <p className="text-sm text-white/70">
+                              Allow users to earn tokens through product interaction
+                            </p>
+                          </div>
+                        </div>
+
+                        {enableMining && (
+                          <div className="space-y-4 pl-7">
+                            <div>
+                              <label htmlFor="mining-method" className="block text-sm font-medium mb-1">
+                                Mining Method
+                              </label>
+                              <select
+                                id="mining-method"
+                                value={miningMethod}
+                                onChange={(e) => setMiningMethod(e.target.value)}
+                                className="w-full rounded-md bg-white/5 border-white/10 py-2 px-3 text-sm"
+                              >
+                                <option value="nfc">NFC Tap (Physical interaction)</option>
+                                <option value="wear">Wear-to-Earn (Usage tracking)</option>
+                                <option value="social">Social Engagement (Sharing, posting)</option>
+                                <option value="activity">Activity Completion (Tasks, challenges)</option>
+                                <option value="hybrid">Hybrid (Multiple methods)</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label htmlFor="reward-token" className="block text-sm font-medium mb-1">
+                                Reward Token
+                              </label>
+                              <Input
+                                id="reward-token"
+                                placeholder="Token name or contract address"
+                                value={rewardToken}
+                                onChange={(e) => setRewardToken(e.target.value)}
+                                className="bg-white/5 border-white/10"
+                              />
+                            </div>
+
+                            <div>
+                              <label htmlFor="reward-rate" className="block text-sm font-medium mb-1">
+                                Reward Rate (tokens per interaction)
+                              </label>
+                              <Input
+                                id="reward-rate"
+                                type="number"
+                                placeholder="1"
+                                value={rewardRate}
+                                onChange={(e) => setRewardRate(e.target.value)}
+                                className="bg-white/5 border-white/10"
+                              />
+                            </div>
+
+                            <div className="rounded-md bg-white/5 p-4">
+                              <h4 className="font-medium mb-2">Verification Methods</h4>
+                              <div className="space-y-2">
+                                <div className="flex items-center">
+                                  <input
+                                    id="verify-nfc"
+                                    type="checkbox"
+                                    checked={true}
+                                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-neon-purple focus:ring-neon-purple"
+                                  />
+                                  <label htmlFor="verify-nfc" className="ml-2 text-sm">
+                                    NFC Tag Verification
+                                  </label>
+                                </div>
+                                <div className="flex items-center">
+                                  <input
+                                    id="verify-location"
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-neon-purple focus:ring-neon-purple"
+                                  />
+                                  <label htmlFor="verify-location" className="ml-2 text-sm">
+                                    Location Verification
+                                  </label>
+                                </div>
+                                <div className="flex items-center">
+                                  <input
+                                    id="verify-photo"
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-neon-purple focus:ring-neon-purple"
+                                  />
+                                  <label htmlFor="verify-photo" className="ml-2 text-sm">
+                                    Photo Verification
+                                  </label>
+                                </div>
+                                <div className="flex items-center">
+                                  <input
+                                    id="verify-social"
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-neon-purple focus:ring-neon-purple"
+                                  />
+                                  <label htmlFor="verify-social" className="ml-2 text-sm">
+                                    Social Media Verification
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-between">
+                      <Button type="button" variant="outline" onClick={prevStep} className="border-white/10">
+                        Previous
+                      </Button>
+                      <Button
                         type="submit"
                         disabled={isSubmitting}
                         className="bg-gradient-to-r from-neon-purple to-neon-blue hover:opacity-90"
@@ -980,6 +1317,10 @@ export default function CreateProduct() {
                       socialSharing,
                       communityAccess,
                       privacyLevel,
+                      enableServiceHistory,
+                      serviceHistoryType,
+                      enableMining,
+                      miningMethod,
                     }}
                   />
                 </CardContent>
@@ -1018,6 +1359,16 @@ export default function CreateProduct() {
                   socialSharing,
                   communityAccess,
                   privacyLevel,
+                  enableServiceHistory,
+                  serviceHistoryType,
+                  serviceVerification,
+                  enableMining,
+                  miningMethod,
+                  rewardToken,
+                  rewardRate,
+                  enableCommunity,
+                  communityType,
+                  membershipRequirements,
                 }}
               />
             </div>
