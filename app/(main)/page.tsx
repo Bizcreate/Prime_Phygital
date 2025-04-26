@@ -15,7 +15,7 @@ export default function Home() {
       <main className="flex-1">
         <HeroSection />
         <div className="container py-8 text-center">
-          <Button size="lg" className="bg-gradient-to-r from-neon-green to-neon-blue hover:opacity-90 animate-pulse">
+          <Button size="lg" className="bg-gradient-to-r from-neon-green to-neon-blue hover:opacity-90">
             <Link href="/dashboard" className="flex items-center">
               <span className="mr-2">🔥</span> Access Dashboard Demo <span className="ml-2">🔥</span>
             </Link>
