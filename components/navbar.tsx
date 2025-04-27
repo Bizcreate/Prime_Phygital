@@ -34,6 +34,17 @@ export function Navbar() {
     }
   }, [])
 
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isOpen) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener("keydown", handleEscapeKey)
+    return () => document.removeEventListener("keydown", handleEscapeKey)
+  }, [isOpen])
+
   // Don't render if not mounted or already rendered elsewhere
   if (!mounted) return null
 
@@ -142,12 +153,16 @@ export function Navbar() {
 
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
+            <Button variant="ghost" size="icon" className="md:hidden" aria-label="Toggle menu">
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="glass-panel border-r border-white/10">
+          <SheetContent
+            side="left"
+            className="glass-panel border-r border-white/10 w-[80%] sm:w-[350px]"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
                 <Image
