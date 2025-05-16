@@ -12,9 +12,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import { Bell, CircleUser, Home, LogOut, Menu, Package, Search, Settings, Users, BarChart } from "lucide-react"
+import {
+  Bell,
+  CircleUser,
+  Home,
+  LogOut,
+  Menu,
+  Package,
+  Search,
+  Settings,
+  Users,
+  BarChart,
+  MessageSquare,
+} from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { toast } from "@/components/ui/use-toast"
 
 export function DashboardNavbar() {
@@ -34,40 +46,15 @@ export function DashboardNavbar() {
     })
   }
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768 && isMobileMenuOpen) {
-        setIsMobileMenuOpen(false)
-      }
-    }
-
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [isMobileMenuOpen])
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement
-      if (isMobileMenuOpen && !target.closest(".mobile-menu-container")) {
-        setIsMobileMenuOpen(false)
-      }
-    }
-
-    document.addEventListener("click", handleClickOutside)
-    return () => document.removeEventListener("click", handleClickOutside)
-  }, [isMobileMenuOpen])
-
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
-      <div className="container flex h-16 items-center px-4 mobile-menu-container">
+      <div className="container flex h-16 items-center px-4">
         <div className="flex items-center gap-2 md:gap-4">
           <Button
             variant="ghost"
             size="icon"
             className="md:hidden"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-expanded={isMobileMenuOpen}
-            aria-label="Toggle menu"
           >
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle menu</span>
@@ -113,6 +100,14 @@ export function DashboardNavbar() {
             }`}
           >
             Analytics
+          </Link>
+          <Link
+            href="/dashboard/social-engagement"
+            className={`text-sm font-medium transition-colors hover:text-white ${
+              isActive("/dashboard/social-engagement") ? "text-white" : "text-white/60"
+            }`}
+          >
+            Social Engagement
           </Link>
           <Link
             href="/profile"
@@ -217,6 +212,13 @@ export function DashboardNavbar() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"
+                onClick={() => (window.location.href = "/dashboard/social-engagement")}
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                <span>Social Engagement</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
                 onClick={() => (window.location.href = "/dashboard/settings")}
               >
                 <Settings className="mr-2 h-4 w-4" />
@@ -234,76 +236,6 @@ export function DashboardNavbar() {
           </DropdownMenu>
         </div>
       </div>
-      {/* Mobile Navigation Menu */}
-      {isMobileMenuOpen && (
-        <div className="absolute top-16 left-0 right-0 bg-black/95 border-b border-white/10 p-4 md:hidden z-50">
-          <nav className="flex flex-col space-y-4">
-            <Link
-              href="/dashboard"
-              className={`text-sm font-medium transition-colors hover:text-white ${
-                isActive("/dashboard") ? "text-white" : "text-white/60"
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/dashboard/products"
-              className={`text-sm font-medium transition-colors hover:text-white ${
-                isActive("/dashboard/products") ? "text-white" : "text-white/60"
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Products
-            </Link>
-            <Link
-              href="/dashboard/customers"
-              className={`text-sm font-medium transition-colors hover:text-white ${
-                isActive("/dashboard/customers") ? "text-white" : "text-white/60"
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Customers
-            </Link>
-            <Link
-              href="/dashboard/analytics"
-              className={`text-sm font-medium transition-colors hover:text-white ${
-                isActive("/dashboard/analytics") ? "text-white" : "text-white/60"
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Analytics
-            </Link>
-            <Link
-              href="/profile"
-              className={`text-sm font-medium transition-colors hover:text-white ${
-                isActive("/profile") ? "text-white" : "text-white/60"
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Profile
-            </Link>
-            <Link
-              href="/dashboard/staking"
-              className={`text-sm font-medium transition-colors hover:text-white ${
-                isActive("/dashboard/staking") ? "text-white" : "text-white/60"
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Staking
-            </Link>
-            <Link
-              href="/dashboard/settings"
-              className={`text-sm font-medium transition-colors hover:text-white ${
-                isActive("/dashboard/settings") ? "text-white" : "text-white/60"
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Settings
-            </Link>
-          </nav>
-        </div>
-      )}
     </header>
   )
 }

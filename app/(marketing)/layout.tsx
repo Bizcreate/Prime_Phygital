@@ -1,4 +1,5 @@
 import type React from "react"
+import { Navbar } from "@/components/navbar"
 
 export default function MarketingLayout({
   children,
@@ -7,6 +8,7 @@ export default function MarketingLayout({
 }) {
   return (
     <>
+      <Navbar />
       <main>{children}</main>
     </>
   )

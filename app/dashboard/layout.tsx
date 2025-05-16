@@ -1,7 +1,5 @@
 import type React from "react"
 import { DashboardNavbar } from "@/components/dashboard-navbar"
-import { UserProvider } from "@/contexts/user-context"
-import { NavigationEvents } from "@/components/navigation-events"
 
 export default function DashboardLayout({
   children,
@@ -9,12 +7,9 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <UserProvider>
-      <div className="flex flex-col min-h-screen">
-        <DashboardNavbar />
-        <main className="flex-1 p-6">{children}</main>
-        <NavigationEvents />
-      </div>
-    </UserProvider>
+    <div className="flex flex-col min-h-screen">
+      <DashboardNavbar />
+      <main className="flex-1 p-6">{children}</main>
+    </div>
   )
 }

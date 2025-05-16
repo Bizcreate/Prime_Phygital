@@ -4,7 +4,18 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { BarChart3, Package, Users, AlertCircle, Bell, Settings, Plus, ArrowUpRight, CoinsIcon } from "lucide-react"
+import {
+  BarChart3,
+  Package,
+  Users,
+  AlertCircle,
+  Bell,
+  Settings,
+  Plus,
+  ArrowUpRight,
+  CoinsIcon,
+  MessageSquare,
+} from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -181,6 +192,12 @@ export default function Dashboard() {
                   <Button className="w-full justify-start" variant="outline">
                     <Plus className="mr-2 h-4 w-4" />
                     Create New Product
+                  </Button>
+                </Link>
+                <Link href="/dashboard/social-engagement">
+                  <Button className="w-full justify-start" variant="outline">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Social Engagement Hub
                   </Button>
                 </Link>
                 <Link href="/dashboard/notifications">

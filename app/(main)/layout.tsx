@@ -1,6 +1,5 @@
 import type React from "react"
 import { Navbar } from "@/components/navbar"
-import { NavigationEvents } from "@/components/navigation-events"
 
 export default function MainLayout({
   children,
@@ -11,7 +10,6 @@ export default function MainLayout({
     <div className="flex min-h-screen flex-col">
       <Navbar />
       <main className="flex-1">{children}</main>
-      <NavigationEvents />
     </div>
   )
 }

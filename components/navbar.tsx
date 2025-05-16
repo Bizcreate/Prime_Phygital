@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -8,48 +8,35 @@ import { Menu, X, ChevronDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Image from "next/image"
 
-// Create a global variable to track if navbar is already rendered
-let isNavbarRendered = false
+// Add a check to prevent duplicate rendering
+const NAVBAR_MOUNTED_KEY = "navbar-mounted"
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const navbarRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
-    // Check if we should render this navbar
-    if (isNavbarRendered) {
+    // Check if navbar is already mounted
+    if (window[NAVBAR_MOUNTED_KEY as any]) {
+      setMounted(false)
       return
     }
 
-    // Mark as mounted and rendered
+    // Mark navbar as mounted
+    window[NAVBAR_MOUNTED_KEY as any] = true
     setMounted(true)
-    isNavbarRendered = true
 
     return () => {
-      // Reset when unmounted
-      if (navbarRef.current) {
-        isNavbarRendered = false
-      }
+      // Clean up when component unmounts
+      window[NAVBAR_MOUNTED_KEY as any] = false
     }
   }, [])
 
-  useEffect(() => {
-    const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isOpen) {
-        setIsOpen(false)
-      }
-    }
-
-    document.addEventListener("keydown", handleEscapeKey)
-    return () => document.removeEventListener("keydown", handleEscapeKey)
-  }, [isOpen])
-
-  // Don't render if not mounted or already rendered elsewhere
+  // Don't render if already mounted elsewhere
   if (!mounted) return null
 
   return (
-    <header ref={navbarRef} className="sticky top-0 z-50 w-full border-b border-border/40 bg-black/50 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-black/50 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
@@ -122,6 +109,11 @@ export function Navbar() {
                     Wear-to-Earn
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/customer/dashboard" className="cursor-pointer">
+                    Customer Dashboard
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -153,16 +145,12 @@ export function Navbar() {
 
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden" aria-label="Toggle menu">
+            <Button variant="ghost" size="icon" className="md:hidden">
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent
-            side="left"
-            className="glass-panel border-r border-white/10 w-[80%] sm:w-[350px]"
-            onOpenAutoFocus={(e) => e.preventDefault()}
-          >
+          <SheetContent side="left" className="glass-panel border-r border-white/10">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
                 <Image
@@ -244,6 +232,13 @@ export function Navbar() {
                     onClick={() => setIsOpen(false)}
                   >
                     Wear-to-Earn
+                  </Link>
+                  <Link
+                    href="/customer/dashboard"
+                    className="text-white/70 hover:text-white"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Customer Dashboard
                   </Link>
                 </div>
               </div>
