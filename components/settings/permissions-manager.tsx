@@ -12,11 +12,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
 import { useUser } from "@/contexts/user-context"
-import { getAllRoles, getPermissionName, rolePermissions, type Role, type Permission } from "@/lib/permissions"
+import {
+  getAllRoles,
+  getAllPermissions,
+  getPermissionName,
+  getPermissionDescription,
+  rolePermissions,
+  type Role,
+  type Permission,
+} from "@/lib/permissions"
 import { Search, UserPlus, Save, Shield, Users, User, Settings } from "lucide-react"
-import PermissionsManager from "@/components/settings/permissions-manager"
 
-export default function PermissionsPage() {
+export default function PermissionsManager() {
   const { toast } = useToast()
   const { user, hasPermission, updateUserRole } = useUser()
   const [activeTab, setActiveTab] = useState("users")
@@ -315,7 +322,64 @@ export default function PermissionsPage() {
         </TabsContent>
 
         <TabsContent value="permissions" className="space-y-6">
-          <PermissionsManager />
+          <Card className="glass-panel border-white/10">
+            <CardHeader>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <CardTitle>Permission Management</CardTitle>
+                  <CardDescription>Configure permissions for each role</CardDescription>
+                </div>
+
+                <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as Role)}>
+                  <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="glass-panel border-white/10">
+                    {getAllRoles().map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role.charAt(0).toUpperCase() + role.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                {getAllPermissions().map((permission) => {
+                  const isEnabled =
+                    customPermissions[permission] !== undefined
+                      ? customPermissions[permission]
+                      : rolePermissions[selectedRole].includes(permission)
+
+                  return (
+                    <div
+                      key={permission}
+                      className="flex items-center justify-between p-3 rounded-md border border-white/10"
+                    >
+                      <div className="space-y-1">
+                        <h3 className="font-medium">{getPermissionName(permission)}</h3>
+                        <p className="text-sm text-white/70">{getPermissionDescription(permission)}</p>
+                      </div>
+                      <Switch
+                        id={`permission-${permission}`}
+                        checked={isEnabled}
+                        onCheckedChange={() => handlePermissionToggle(permission)}
+                        disabled={selectedRole === "admin" && permission === "admin:all"}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="flex justify-end">
+                <Button onClick={handleSavePermissions} className="bg-gradient-to-r from-neon-purple to-neon-blue">
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Permissions
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
