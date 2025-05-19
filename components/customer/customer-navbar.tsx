@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Menu, Home, Package, Award, QrCode, Bell, User, LogOut, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -17,10 +17,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { useNotifications } from "@/contexts/notification-context"
 
 export function CustomerNavbar() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const { unreadCount } = useNotifications()
 
   const routes = [
     {
@@ -50,6 +53,22 @@ export function CustomerNavbar() {
     },
   ]
 
+  const handleNavigation = (href: string) => {
+    console.log(`Navigating to: ${href}`)
+    router.push(href)
+  }
+
+  const handleLogout = () => {
+    // Add logout logic here
+    console.log("Logging out...")
+    router.push("/")
+  }
+
+  const handleNotificationsClick = () => {
+    console.log("Opening notifications")
+    router.push("/customer/notifications")
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
@@ -78,17 +97,19 @@ export function CustomerNavbar() {
               </div>
               <nav className="mt-2 flex flex-col gap-1 px-2">
                 {routes.map((route) => (
-                  <Link
+                  <button
                     key={route.href}
-                    href={route.href}
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      setIsOpen(false)
+                      handleNavigation(route.href)
+                    }}
                     className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground ${
                       pathname === route.href ? "bg-accent text-accent-foreground" : ""
                     }`}
                   >
                     <route.icon className="h-4 w-4" />
                     {route.name}
-                  </Link>
+                  </button>
                 ))}
               </nav>
             </SheetContent>
@@ -99,24 +120,33 @@ export function CustomerNavbar() {
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm">
           {routes.map((route) => (
-            <Link
+            <button
               key={route.href}
-              href={route.href}
+              onClick={() => handleNavigation(route.href)}
               className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary ${
                 pathname === route.href ? "text-foreground" : "text-muted-foreground"
               }`}
             >
               <route.icon className="h-4 w-4" />
               {route.name}
-            </Link>
+            </button>
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            onClick={handleNotificationsClick}
+            aria-label="Notifications"
+          >
             <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-primary text-primary-foreground text-xs">
-              4
-            </Badge>
+            {unreadCount > 0 && (
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-primary text-primary-foreground text-xs">
+                {unreadCount}
+              </Badge>
+            )}
+            <span className="sr-only">{unreadCount} unread notifications</span>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -130,16 +160,16 @@ export function CustomerNavbar() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleNavigation("/customer/profile")}>
                 <User className="mr-2 h-4 w-4" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleNavigation("/customer/rewards")}>
                 <Wallet className="mr-2 h-4 w-4" />
                 Rewards: 2,450 pts
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
               </DropdownMenuItem>

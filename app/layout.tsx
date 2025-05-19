@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { AnalyticsProvider } from "@/components/analytics/analytics-provider"
 import { PageViewTracker } from "@/components/analytics/page-view-tracker"
 import { Suspense } from "react"
+import { ErrorBoundary } from "@/components/error-boundary"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -25,8 +26,10 @@ export default function RootLayout({
       <body className={inter.className}>
         <AnalyticsProvider>
           <Suspense>
-            {children}
-            <PageViewTracker />
+            <ErrorBoundary>
+              {children}
+              <PageViewTracker />
+            </ErrorBoundary>
           </Suspense>
           <Toaster />
         </AnalyticsProvider>

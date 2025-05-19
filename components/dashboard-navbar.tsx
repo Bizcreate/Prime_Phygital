@@ -28,6 +28,7 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useState } from "react"
 import { toast } from "@/components/ui/use-toast"
+import { cn } from "@/lib/utils"
 
 export function DashboardNavbar() {
   const pathname = usePathname()
@@ -132,6 +133,16 @@ export function DashboardNavbar() {
             }`}
           >
             Settings
+          </Link>
+          <Link
+            href="/dashboard/wear-to-earn/analytics"
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-white",
+              pathname === "/dashboard/wear-to-earn/analytics" ? "text-white" : "text-white/60",
+            )}
+          >
+            <BarChart className="mr-2 h-4 w-4" />
+            <span>W2E Analytics</span>
           </Link>
         </nav>
 

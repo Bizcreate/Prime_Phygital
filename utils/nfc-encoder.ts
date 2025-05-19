@@ -12,24 +12,57 @@ export interface NFCOptions {
   ignoreRead?: boolean
 }
 
+// Enhanced for real NFC hardware
 export async function encodeNFCTag(options: NFCOptions): Promise<boolean> {
-  // This is a placeholder for the actual NFC encoding logic
-  // In a real implementation, this would interact with the Web NFC API
-  // https://developer.mozilla.org/en-US/docs/Web/API/Web_NFC_API
-
   try {
     console.log("Encoding NFC tag with options:", options)
 
-    // Simulate a delay to mimic real encoding process
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    // Check for Web NFC API support
+    if (typeof window !== "undefined" && "NDEFReader" in window) {
+      try {
+        // @ts-ignore - NDEFReader is not in the TypeScript types yet
+        const ndef = new window.NDEFReader()
 
-    // In a real implementation, this would use the Web NFC API like:
-    // if ('NDEFReader' in window) {
-    //   const ndef = new NDEFReader();
-    //   await ndef.write(options);
-    // }
+        // Convert our options format to Web NFC API format
+        const ndefRecords = options.records.map((record) => {
+          if (record.recordType === "text") {
+            return {
+              recordType: "text",
+              data: record.data,
+              ...(record.lang && { lang: record.lang }),
+              ...(record.encoding && { encoding: record.encoding }),
+            }
+          } else if (record.recordType === "uri") {
+            return { recordType: "url", data: record.data }
+          } else {
+            return {
+              recordType: record.recordType,
+              data: record.data,
+              ...(record.id && { id: record.id }),
+            }
+          }
+        })
 
-    return true
+        // Write to the NFC tag
+        await ndef.write({ records: ndefRecords })
+        console.log("NFC tag written successfully")
+        return true
+      } catch (error) {
+        console.error("Error writing to NFC tag:", error)
+        throw new Error(`NFC write failed: ${error.message}`)
+      }
+    } else {
+      // Fallback for browsers without Web NFC API
+      console.warn("Web NFC API not supported in this browser")
+
+      // Simulate success for development purposes
+      if (process.env.NODE_ENV === "development") {
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+        return true
+      }
+
+      throw new Error("Web NFC API not supported in this browser")
+    }
   } catch (error) {
     console.error("Error encoding NFC tag:", error)
     return false
@@ -39,4 +72,29 @@ export async function encodeNFCTag(options: NFCOptions): Promise<boolean> {
 export function checkNFCSupport(): boolean {
   // Check if the browser supports Web NFC API
   return typeof window !== "undefined" && "NDEFReader" in window
+}
+
+// Client-side function that calls the server action for verification
+export const scanSignatures = async (signatureData: string): Promise<boolean> => {
+  try {
+    // Call the server action to verify the signature
+    const response = await fetch("/api/verify-signature", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ signatureData }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Verification failed: ${response.status}`)
+    }
+
+    const result = await response.json()
+    return result.verified
+  } catch (error) {
+    console.error("Error verifying signature:", error)
+    // In production, you might want to fail on errors
+    return process.env.NODE_ENV === "production" ? false : true
+  }
 }
