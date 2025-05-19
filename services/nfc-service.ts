@@ -1,5 +1,4 @@
 import { encodeNFCTag, scanSignatures, type NFCRecord } from "@/utils/nfc-encoder"
-import { NDEFReader } from "ndef-reader" // Declare the NDEFReader variable
 
 export interface NFCProductData {
   productId: string
@@ -70,8 +69,9 @@ export class NFCService {
 
       if (typeof window !== "undefined" && "NDEFReader" in window) {
         try {
+          // Use the Web NFC API directly
           // @ts-ignore - TypeScript might not recognize NDEFReader
-          const ndef = new NDEFReader()
+          const ndef = new window.NDEFReader()
 
           // Start scanning
           await ndef.scan()

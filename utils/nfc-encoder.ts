@@ -20,6 +20,7 @@ export async function encodeNFCTag(options: NFCOptions): Promise<boolean> {
     // Check for Web NFC API support
     if (typeof window !== "undefined" && "NDEFReader" in window) {
       try {
+        // Use the Web NFC API directly
         // @ts-ignore - NDEFReader is not in the TypeScript types yet
         const ndef = new window.NDEFReader()
 
