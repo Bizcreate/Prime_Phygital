@@ -1,4 +1,4 @@
-import { JsonRpcProvider, ethers } from "ethers"
+import { JsonRpcProvider } from "ethers"
 
 export type SupportedChain = "ethereum" | "polygon" | "base" | "arbitrum" | "optimism"
 
@@ -6,7 +6,7 @@ export interface ChainConfig {
   name: string
   chainId: number
   rpcUrl: string
-  contractAddress?: string // Made optional
+  contractAddress?: string
   explorerUrl: string
   nativeCurrency: {
     name: string
@@ -17,13 +17,13 @@ export interface ChainConfig {
     name: string
     chainId: number
     rpcUrl: string
-    contractAddress?: string // Made optional
+    contractAddress?: string
     explorerUrl: string
   }
   logo: string
   color: string
   description: string
-  available: boolean // Track if chain is available in Alchemy
+  available: boolean
 }
 
 export const CHAIN_CONFIGS: Record<SupportedChain, ChainConfig> = {
@@ -110,55 +110,6 @@ export const CHAIN_CONFIGS: Record<SupportedChain, ChainConfig> = {
   },
 }
 
-/**
- * Basic configuration object for the blockchain service.
- * Extend this as your needs grow (e.g. add more chains, alchemy keys, etc.).
- */
-export interface BlockchainServiceConfig {
-  /**
-   * RPC URL (e.g. Alchemy, Infura, or your own node endpoint)
-   */
-  rpcUrl: string
-
-  /**
-   * Private key used for signing transactions (server side ONLY).
-   * DO NOT expose this in the browser - keep it on the server or in a Server Action.
-   */
-  privateKey?: string
-
-  /**
-   * Chain ID (e.g. 1 = Ethereum mainnet, 137 = Polygon, etc.)
-   */
-  chainId?: number
-}
-
-/**
- * A minimal set of methods we need in the app right now.
- * Feel free to extend with whatever your product flow requires.
- */
-export interface BlockchainService {
-  /**
-   * Verify the connection by requesting the latest block number.
-   */
-  testConnection: () => Promise<number>
-
-  /**
-   * Registers a product on-chain (stub for now).
-   * Replace contractAddress + abi with your actual NFT / ERC-721 contract.
-   */
-  registerProduct: (productId: string, owner: string) => Promise<ethers.TransactionResponse>
-
-  /**
-   * Reads product ownership (stub for now).
-   */
-  getOwnerOf: (productId: string) => Promise<string>
-
-  provider: ethers.providers.JsonRpcProvider
-  signer?: ethers.Signer
-  getBalance(address: string): Promise<ethers.BigNumber>
-  getBlockNumber(): Promise<number>
-}
-
 export class MultiChainService {
   private currentChain: SupportedChain
   private useTestnet: boolean
@@ -234,101 +185,30 @@ export class MultiChainService {
     return balance.toString()
   }
 
-  // Simulate contract deployment (for when you mint products)
   async deployContract(chain: SupportedChain, contractCode: string): Promise<string> {
     console.log(`Deploying contract to ${CHAIN_CONFIGS[chain].name}...`)
-
-    // This would be replaced with actual deployment logic
-    // For now, simulate deployment
     await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    // Return mock contract address
     const mockAddress = `0x${Math.random().toString(16).substr(2, 40)}`
     console.log(`Contract deployed to ${CHAIN_CONFIGS[chain].name}: ${mockAddress}`)
-
     return mockAddress
   }
 }
 
-/**
- * Factory helper – returns a new MultiChainService instance.
- * Allows callers to create their own scoped service instead of
- * relying on the shared singleton.
- */
+// This is the required named export that was missing
 export function createBlockchainService(chain: SupportedChain = "ethereum", useTestnet = false): MultiChainService {
   return new MultiChainService(chain, useTestnet)
 }
 
-/**
- * Factory that returns a fully-initialised BlockchainService instance.
- * Exported as **createBlockchainServiceInstance** to satisfy the deployment check.
- */
-export function createBlockchainServiceInstance(config: BlockchainServiceConfig): BlockchainService {
-  if (!config.rpcUrl) throw new Error("rpcUrl is required")
-
-  // Create an ethers.js provider and signer (signer only if private key is supplied)
-  const provider = new ethers.JsonRpcProvider(config.rpcUrl)
-  const signer = config.privateKey ? new ethers.Wallet(config.privateKey, provider) : undefined
-
-  // ---------------------------------------------------------------------------
-  // NOTE:
-  // Replace the two placeholders below (contractAddress & abi) with your
-  // actual smart-contract address and ABI for full functionality.
-  // ---------------------------------------------------------------------------
-  const contractAddress = "0x0000000000000000000000000000000000000000" // TODO: replace
-  const abi: ethers.InterfaceAbi = [] // TODO: replace
-  const contract = new ethers.Contract(contractAddress, abi, signer ?? provider)
-
-  return {
-    provider,
-    signer,
-    /**
-     * Simply fetches the latest block number to verify the network connection.
-     */
-    async testConnection() {
-      return provider.getBlockNumber()
-    },
-
-    /**
-     * Registers a product on-chain (placeholder implementation).
-     * Replace the call below with your contract's actual function, e.g. `mint`.
-     */
-    async registerProduct(productId, owner) {
-      if (!signer) throw new Error("registerProduct requires a signer – provide a privateKey in config")
-
-      // Example: assume your contract has a `registerProduct(string,uint256)` method
-      return contract.registerProduct(owner, productId)
-    },
-
-    /**
-     * Reads the owner of a product (placeholder implementation).
-     * Replace with your contract's actual read function, e.g. `ownerOf`.
-     */
-    async getOwnerOf(productId) {
-      // Example: `ownerOf(uint256 tokenId)`
-      return contract.ownerOf(productId)
-    },
-
-    async getBalance(address: string) {
-      return provider.getBalance(address)
-    },
-
-    async getBlockNumber() {
-      return provider.getBlockNumber()
-    },
+export async function testBlockchainConnection(chain: SupportedChain): Promise<boolean> {
+  try {
+    const service = new MultiChainService(chain)
+    const blockNumber = await service.getBlockNumber()
+    console.log(`${CHAIN_CONFIGS[chain].name} - Latest block: ${blockNumber}`)
+    return blockNumber > 0
+  } catch (error) {
+    console.error(`Failed to connect to ${CHAIN_CONFIGS[chain].name}:`, error)
+    return false
   }
 }
 
-/**
- * Default export allows:
- *   import blockchainService from "@/services/blockchain-service"
- * with env-driven RPC URL.
- */
-const defaultConfig: BlockchainServiceConfig = {
-  rpcUrl: process.env.NEXT_PUBLIC_ETHEREUM_RPC_URL ?? "",
-  chainId: 1,
-  // Never expose privateKey in NEXT_PUBLIC_* variables – keep it server-side.
-}
-const blockchainService = createBlockchainServiceInstance(defaultConfig)
-
-export default blockchainService
+export const multiChainService = new MultiChainService()
