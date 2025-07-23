@@ -152,6 +152,11 @@ export interface BlockchainService {
    * Reads product ownership (stub for now).
    */
   getOwnerOf: (productId: string) => Promise<string>
+
+  provider: ethers.providers.JsonRpcProvider
+  signer?: ethers.Signer
+  getBalance(address: string): Promise<ethers.BigNumber>
+  getBlockNumber(): Promise<number>
 }
 
 export class MultiChainService {
@@ -275,6 +280,8 @@ export function createBlockchainServiceInstance(config: BlockchainServiceConfig)
   const contract = new ethers.Contract(contractAddress, abi, signer ?? provider)
 
   return {
+    provider,
+    signer,
     /**
      * Simply fetches the latest block number to verify the network connection.
      */
@@ -301,15 +308,21 @@ export function createBlockchainServiceInstance(config: BlockchainServiceConfig)
       // Example: `ownerOf(uint256 tokenId)`
       return contract.ownerOf(productId)
     },
+
+    async getBalance(address: string) {
+      return provider.getBalance(address)
+    },
+
+    async getBlockNumber() {
+      return provider.getBlockNumber()
+    },
   }
 }
 
 /**
- * For convenience, you can import the service like:
+ * Default export allows:
  *   import blockchainService from "@/services/blockchain-service"
- *
- * It will read environment variables automatically.  You can also build
- * your own config manually and call `createBlockchainServiceInstance` directly.
+ * with env-driven RPC URL.
  */
 const defaultConfig: BlockchainServiceConfig = {
   rpcUrl: process.env.NEXT_PUBLIC_ETHEREUM_RPC_URL ?? "",
