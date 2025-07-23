@@ -12,6 +12,8 @@ import {
   BarChart3,
   Smartphone,
   ShoppingBag,
+  QrCode,
+  Edit,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -19,6 +21,10 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/components/ui/use-toast"
+import { useState } from "react"
+import { ChallengeTracker } from "@/components/wear-to-earn/challenge-tracker"
+import { ActivityHistory } from "@/components/wear-to-earn/activity-history"
+import { GeoTracker } from "@/components/wear-to-earn/geo-tracker"
 
 const protocols = [
   {
@@ -152,18 +158,57 @@ export default function ProtocolDetails() {
   // Find the protocol based on the ID from the URL
   const protocol = protocols.find((p) => p.id === id) || protocols[0]
 
+  const [isTracking, setIsTracking] = useState(false)
+  const [startTime, setStartTime] = useState<Date | null>(null)
+  const [currentPoints, setCurrentPoints] = useState(6500) // Current user points
+
+  // Update the handleShare function to actually copy to clipboard
   const handleShare = () => {
+    const shareUrl = `${window.location.origin}/customer/wear-to-earn/${id}`
+    navigator.clipboard.writeText(shareUrl)
+
     toast({
       title: "Share link copied",
       description: "Challenge link has been copied to clipboard",
     })
   }
 
+  // Update the handleTrackActivity function to start actual tracking
   const handleTrackActivity = () => {
+    setIsTracking(true)
+    setStartTime(new Date())
+
     toast({
       title: "Activity tracking started",
-      description: "Your wear time is now being tracked",
+      description: "Your wear time is now being tracked. Keep wearing your product to earn points!",
     })
+
+    // In a real app, this would start a background tracking process
+    // For demo purposes, we'll just show the toast
+  }
+
+  const handleEdit = () => {
+    toast({
+      title: "Edit Challenge",
+      description: "Opening challenge editor...",
+    })
+    // In a real app, this would navigate to an edit page
+  }
+
+  const handleViewQR = () => {
+    toast({
+      title: "QR Code",
+      description: "Opening QR code for this challenge...",
+    })
+    // In a real app, this would open a QR code modal
+  }
+
+  const handleNFCSettings = () => {
+    toast({
+      title: "NFC Settings",
+      description: "Opening NFC configuration...",
+    })
+    // In a real app, this would open NFC settings
   }
 
   return (
@@ -226,20 +271,104 @@ export default function ProtocolDetails() {
                   </div>
                 </div>
 
+                <div className="mt-4">
+                  <ChallengeTracker
+                    challengeId={id.toString()}
+                    challengeName={protocol.name}
+                    pointsPerHour={25}
+                    dailyGoal={120} // 2 hours
+                    currentProgress={protocol.progress}
+                  />
+                </div>
+
                 <div className="mt-4 flex gap-2">
-                  <Button onClick={handleTrackActivity}>Track Activity</Button>
-                  <Button variant="outline" onClick={handleShare}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const shareUrl = `${window.location.origin}/customer/wear-to-earn/${id}`
+                      navigator.clipboard.writeText(shareUrl)
+                      toast({
+                        title: "Share link copied! 🔗",
+                        description: "Challenge link has been copied to clipboard",
+                      })
+                    }}
+                  >
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      toast({
+                        title: "QR Code Generated 📱",
+                        description: "Opening QR code for quick access to this challenge",
+                      })
+                    }}
+                  >
+                    <QrCode className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      toast({
+                        title: "NFC Settings ⚡",
+                        description: "Opening NFC configuration for this product",
+                      })
+                    }}
+                  >
+                    <Smartphone className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      toast({
+                        title: "Edit Challenge",
+                        description: "Opening challenge editor...",
+                      })
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={
+                      isTracking
+                        ? () => {
+                            setIsTracking(false)
+                            toast({
+                              title: "Activity tracking stopped",
+                              description: `You tracked your activity for ${Math.floor((new Date().getTime() - (startTime?.getTime() || 0)) / 60000)} minutes!`,
+                            })
+                          }
+                        : handleTrackActivity
+                    }
+                    className={isTracking ? "bg-red-500 hover:bg-red-600" : ""}
+                  >
+                    {isTracking ? "Stop Tracking" : "Track Activity"}
                   </Button>
                 </div>
               </div>
             </div>
           </Card>
+          <div className="mt-4">
+            <GeoTracker
+              productName={protocol.name}
+              challengeId={id.toString()}
+              onSessionComplete={(data) => {
+                toast({
+                  title: `Session Complete! 🎉`,
+                  description: `You earned ${data.points} ${data.verified ? "verified" : ""} points in ${Math.floor(data.duration / 60000)} minutes!`,
+                })
+              }}
+            />
+          </div>
 
           <Tabs defaultValue="activities" className="space-y-4">
             <TabsList>
               <TabsTrigger value="activities">Activities</TabsTrigger>
+              <TabsTrigger value="geo-history">Geo History</TabsTrigger>
               <TabsTrigger value="rules">Rules</TabsTrigger>
               <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
             </TabsList>
@@ -279,6 +408,10 @@ export default function ProtocolDetails() {
                   <Button variant="outline">View All Activities</Button>
                 </CardFooter>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="geo-history" className="space-y-4">
+              <ActivityHistory userId="user-123" />
             </TabsContent>
 
             <TabsContent value="rules" className="space-y-4">

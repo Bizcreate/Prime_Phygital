@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/components/ui/use-toast"
+import { EnhancedAnalytics } from "@/components/enhanced-analytics"
+import { NotificationCenter } from "@/components/notification-center"
 
 export default function Dashboard() {
   const { toast } = useToast()
@@ -230,60 +232,109 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Analytics Overview</CardTitle>
-              <CardDescription>View detailed analytics about your products and customers</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[400px] flex items-center justify-center">
-              <p className="text-muted-foreground">Analytics dashboard will appear here</p>
-            </CardContent>
-            <CardFooter>
-              <Link href="/dashboard/analytics">
-                <Button>View Full Analytics</Button>
-              </Link>
-            </CardFooter>
-          </Card>
+          <EnhancedAnalytics />
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Reports</CardTitle>
-              <CardDescription>Generate and view reports about your products and customers</CardDescription>
+              <CardTitle>Reports Dashboard</CardTitle>
+              <CardDescription>
+                Generate comprehensive reports about your products and customer engagement
+              </CardDescription>
             </CardHeader>
-            <CardContent className="h-[400px] flex items-center justify-center">
-              <p className="text-muted-foreground">Reports will appear here</p>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="glass-panel border-white/10">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Product Performance</CardTitle>
+                    <CardDescription>Detailed analytics on product scans and authentications</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button className="w-full">Generate Report</Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="glass-panel border-white/10">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Customer Insights</CardTitle>
+                    <CardDescription>User behavior and engagement patterns</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button className="w-full">Generate Report</Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="glass-panel border-white/10">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Security Analysis</CardTitle>
+                    <CardDescription>Authentication attempts and security metrics</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button className="w-full">Generate Report</Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="glass-panel border-white/10">
+                <CardHeader>
+                  <CardTitle>Recent Reports</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Monthly Product Performance - November 2024</h4>
+                        <p className="text-sm text-white/70">Generated 2 days ago</p>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Download
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Customer Engagement Analysis - Q4 2024</h4>
+                        <p className="text-sm text-white/70">Generated 1 week ago</p>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Download
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Security Audit Report - October 2024</h4>
+                        <p className="text-sm text-white/70">Generated 2 weeks ago</p>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </CardContent>
-            <CardFooter>
-              <Button
-                onClick={() => {
-                  toast({
-                    title: "Report Generated",
-                    description: "Your report has been generated successfully",
-                  })
-                }}
-              >
-                Generate Report
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Notifications</CardTitle>
-              <CardDescription>Manage your notification preferences and view recent notifications</CardDescription>
+              <CardTitle>Notification Management</CardTitle>
+              <CardDescription>Manage your notification preferences and view recent alerts</CardDescription>
             </CardHeader>
-            <CardContent className="h-[400px] flex items-center justify-center">
-              <p className="text-muted-foreground">Notifications will appear here</p>
+            <CardContent>
+              <div className="flex justify-center">
+                <NotificationCenter />
+              </div>
+              <div className="mt-6">
+                <Link href="/dashboard/notifications">
+                  <Button className="w-full">
+                    <Bell className="mr-2 h-4 w-4" />
+                    Open Full Notification Center
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
-            <CardFooter>
-              <Link href="/dashboard/notifications">
-                <Button>Manage Notifications</Button>
-              </Link>
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>

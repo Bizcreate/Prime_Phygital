@@ -1,204 +1,227 @@
-import { ethers } from "ethers"
+import { JsonRpcProvider } from "ethers"
 
-// ABI for your smart contract
-const CONTRACT_ABI = [
-  // This should be replaced with your actual contract ABI
-  "function registerProduct(string productId, string metadata) public returns (bool)",
-  "function verifyProduct(string productId) public view returns (bool, string)",
-  "function transferOwnership(string productId, address newOwner) public returns (bool)",
-  "function getProductHistory(string productId) public view returns (string[])",
-]
+export type SupportedChain = "ethereum" | "polygon" | "base" | "arbitrum" | "optimism"
 
-// Interface for product data
-export interface ProductData {
-  id: string
+export interface ChainConfig {
   name: string
-  brand: string
-  serialNumber: string
-  manufactureDate: string
-  metadata: string
-}
-
-// Supported blockchain networks
-export type BlockchainNetwork = "ethereum" | "polygon" | "base" | "solana"
-
-// Configuration for blockchain service
-export interface BlockchainConfig {
-  network: BlockchainNetwork
+  chainId: number
   rpcUrl: string
-  contractAddress: string
+  contractAddress?: string // Made optional
+  explorerUrl: string
+  nativeCurrency: {
+    name: string
+    symbol: string
+    decimals: number
+  }
+  testnet?: {
+    name: string
+    chainId: number
+    rpcUrl: string
+    contractAddress?: string // Made optional
+    explorerUrl: string
+  }
+  logo: string
+  color: string
+  description: string
+  available: boolean // Track if chain is available in Alchemy
 }
 
-export class BlockchainService {
-  private provider: ethers.providers.JsonRpcProvider | null = null
-  private contract: ethers.Contract | null = null
-  private network: BlockchainNetwork
-  private isInitialized = false
+export const CHAIN_CONFIGS: Record<SupportedChain, ChainConfig> = {
+  ethereum: {
+    name: "Ethereum",
+    chainId: 1,
+    rpcUrl: process.env.NEXT_PUBLIC_ETHEREUM_RPC_URL || "",
+    contractAddress: process.env.NEXT_PUBLIC_ETHEREUM_CONTRACT_ADDRESS || undefined,
+    explorerUrl: "https://etherscan.io",
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    logo: "⟠",
+    color: "bg-blue-500",
+    description: "The original smart contract platform",
+    available: true,
+    testnet: {
+      name: "Sepolia",
+      chainId: 11155111,
+      rpcUrl: process.env.NEXT_PUBLIC_ETHEREUM_TESTNET_RPC_URL || "",
+      contractAddress: process.env.NEXT_PUBLIC_ETHEREUM_TESTNET_CONTRACT_ADDRESS || undefined,
+      explorerUrl: "https://sepolia.etherscan.io",
+    },
+  },
+  polygon: {
+    name: "Polygon",
+    chainId: 137,
+    rpcUrl: process.env.NEXT_PUBLIC_POLYGON_RPC_URL || "",
+    contractAddress: process.env.NEXT_PUBLIC_POLYGON_CONTRACT_ADDRESS || undefined,
+    explorerUrl: "https://polygonscan.com",
+    nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
+    logo: "⬟",
+    color: "bg-purple-500",
+    description: "Low-cost, high-speed Ethereum scaling",
+    available: true,
+    testnet: {
+      name: "Amoy",
+      chainId: 80002,
+      rpcUrl: process.env.NEXT_PUBLIC_POLYGON_TESTNET_RPC_URL || "",
+      contractAddress: process.env.NEXT_PUBLIC_POLYGON_TESTNET_CONTRACT_ADDRESS || undefined,
+      explorerUrl: "https://amoy.polygonscan.com",
+    },
+  },
+  base: {
+    name: "Base",
+    chainId: 8453,
+    rpcUrl: process.env.NEXT_PUBLIC_BASE_RPC_URL || "",
+    contractAddress: process.env.NEXT_PUBLIC_BASE_CONTRACT_ADDRESS || undefined,
+    explorerUrl: "https://basescan.org",
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    logo: "🔵",
+    color: "bg-blue-600",
+    description: "Coinbase's L2 for everyone",
+    available: true,
+    testnet: {
+      name: "Base Sepolia",
+      chainId: 84532,
+      rpcUrl: process.env.NEXT_PUBLIC_BASE_TESTNET_RPC_URL || "",
+      contractAddress: process.env.NEXT_PUBLIC_BASE_TESTNET_CONTRACT_ADDRESS || undefined,
+      explorerUrl: "https://sepolia.basescan.org",
+    },
+  },
+  arbitrum: {
+    name: "Arbitrum",
+    chainId: 42161,
+    rpcUrl: process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL || "",
+    contractAddress: process.env.NEXT_PUBLIC_ARBITRUM_CONTRACT_ADDRESS || undefined,
+    explorerUrl: "https://arbiscan.io",
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    logo: "🔷",
+    color: "bg-cyan-500",
+    description: "Optimistic rollup scaling solution",
+    available: true,
+  },
+  optimism: {
+    name: "Optimism",
+    chainId: 10,
+    rpcUrl: process.env.NEXT_PUBLIC_OPTIMISM_RPC_URL || "",
+    contractAddress: process.env.NEXT_PUBLIC_OPTIMISM_CONTRACT_ADDRESS || undefined,
+    explorerUrl: "https://optimistic.etherscan.io",
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    logo: "🔴",
+    color: "bg-red-500",
+    description: "Fast, stable, and scalable L2",
+    available: true,
+  },
+}
 
-  constructor(private config: BlockchainConfig) {
-    this.network = config.network
+export class MultiChainService {
+  private currentChain: SupportedChain
+  private useTestnet: boolean
+
+  constructor(chain: SupportedChain = "ethereum", useTestnet = false) {
+    this.currentChain = chain
+    this.useTestnet = useTestnet
   }
 
-  // Initialize the blockchain connection
-  async initialize(): Promise<boolean> {
-    try {
-      if (this.isEthereumCompatible()) {
-        this.provider = new ethers.providers.JsonRpcProvider(this.config.rpcUrl)
-        this.contract = new ethers.Contract(this.config.contractAddress, CONTRACT_ABI, this.provider)
-      } else if (this.network === "solana") {
-        // Initialize Solana connection
-        // This would use @solana/web3.js
-        console.log("Solana initialization would happen here")
-      }
-
-      this.isInitialized = true
-      return true
-    } catch (error) {
-      console.error("Failed to initialize blockchain service:", error)
-      return false
-    }
+  getCurrentConfig(): ChainConfig {
+    const config = CHAIN_CONFIGS[this.currentChain]
+    return this.useTestnet && config.testnet
+      ? {
+          ...config,
+          ...config.testnet,
+          testnet: config.testnet,
+        }
+      : config
   }
 
-  // Check if the service is initialized
-  isReady(): boolean {
-    return this.isInitialized
+  switchChain(chain: SupportedChain) {
+    this.currentChain = chain
   }
 
-  // Register a new product on the blockchain - client side method
-  async registerProduct(product: ProductData, privateKey: string): Promise<string> {
-    try {
-      // Call the server API instead of using the API key directly
-      const response = await fetch("/api/blockchain/register-product", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          product,
-          privateKey,
-          network: this.network,
-          contractAddress: this.config.contractAddress,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      return data.transactionHash
-    } catch (error) {
-      console.error("Error registering product on blockchain:", error)
-      throw error
-    }
+  toggleTestnet() {
+    this.useTestnet = !this.useTestnet
   }
 
-  // Verify a product on the blockchain - client side method
-  async verifyProduct(productId: string): Promise<{ isVerified: boolean; metadata: string }> {
-    try {
-      // Call the server API instead of using the API key directly
-      const response = await fetch(
-        `/api/blockchain/verify-product?productId=${encodeURIComponent(productId)}&network=${encodeURIComponent(this.network)}&contractAddress=${encodeURIComponent(this.config.contractAddress)}`,
-        {
-          method: "GET",
-        },
-      )
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      return await response.json()
-    } catch (error) {
-      console.error("Error verifying product on blockchain:", error)
-      return { isVerified: false, metadata: "" }
-    }
+  getAllChains(): Array<{ id: SupportedChain; config: ChainConfig }> {
+    return Object.entries(CHAIN_CONFIGS).map(([id, config]) => ({
+      id: id as SupportedChain,
+      config,
+    }))
   }
 
-  // Transfer ownership of a product - client side method
-  async transferOwnership(productId: string, newOwnerAddress: string, privateKey: string): Promise<string> {
-    try {
-      // Call the server API instead of using the API key directly
-      const response = await fetch("/api/blockchain/transfer-ownership", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          productId,
-          newOwnerAddress,
-          privateKey,
-          network: this.network,
-          contractAddress: this.config.contractAddress,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      return data.transactionHash
-    } catch (error) {
-      console.error("Error transferring ownership on blockchain:", error)
-      throw error
-    }
+  getAvailableChains(): Array<{ id: SupportedChain; config: ChainConfig }> {
+    return this.getAllChains().filter(({ config }) => config.available && config.rpcUrl)
   }
 
-  // Get product history from the blockchain - client side method
-  async getProductHistory(productId: string): Promise<string[]> {
-    try {
-      // Call the server API instead of using the API key directly
-      const response = await fetch(
-        `/api/blockchain/product-history?productId=${encodeURIComponent(productId)}&network=${encodeURIComponent(this.network)}&contractAddress=${encodeURIComponent(this.config.contractAddress)}`,
-        {
-          method: "GET",
-        },
-      )
+  hasContractDeployed(chain?: SupportedChain): boolean {
+    const targetChain = chain || this.currentChain
+    const config = CHAIN_CONFIGS[targetChain]
+    const contractAddress = this.useTestnet && config.testnet ? config.testnet.contractAddress : config.contractAddress
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      return data.history
-    } catch (error) {
-      console.error("Error getting product history from blockchain:", error)
-      return []
-    }
+    return !!contractAddress && contractAddress.length > 0
   }
 
-  // Helper method to check if the network is Ethereum-compatible
-  private isEthereumCompatible(): boolean {
-    return ["ethereum", "polygon", "base"].includes(this.network)
-  }
-
-  // Get a blockchain explorer URL for a transaction
   getExplorerUrl(txHash: string): string {
-    switch (this.network) {
-      case "ethereum":
-        return `https://goerli.etherscan.io/tx/${txHash}`
-      case "polygon":
-        return `https://mumbai.polygonscan.com/tx/${txHash}`
-      case "base":
-        return `https://goerli.basescan.org/tx/${txHash}`
-      case "solana":
-        return `https://explorer.solana.com/tx/${txHash}?cluster=devnet`
-      default:
-        return `https://etherscan.io/tx/${txHash}`
+    const config = this.getCurrentConfig()
+    return `${config.explorerUrl}/tx/${txHash}`
+  }
+
+  async getProvider(chain?: SupportedChain): Promise<JsonRpcProvider> {
+    const targetChain = chain || this.currentChain
+    const config = CHAIN_CONFIGS[targetChain]
+    const rpcUrl = this.useTestnet && config.testnet ? config.testnet.rpcUrl : config.rpcUrl
+
+    if (!rpcUrl) {
+      throw new Error(`No RPC URL configured for ${config.name}`)
     }
+
+    return new JsonRpcProvider(rpcUrl)
+  }
+
+  async getBlockNumber(chain?: SupportedChain): Promise<number> {
+    const provider = await this.getProvider(chain)
+    return await provider.getBlockNumber()
+  }
+
+  async getBalance(address: string, chain?: SupportedChain): Promise<string> {
+    const provider = await this.getProvider(chain)
+    const balance = await provider.getBalance(address)
+    return balance.toString()
+  }
+
+  // Simulate contract deployment (for when you mint products)
+  async deployContract(chain: SupportedChain, contractCode: string): Promise<string> {
+    console.log(`Deploying contract to ${CHAIN_CONFIGS[chain].name}...`)
+
+    // This would be replaced with actual deployment logic
+    // For now, simulate deployment
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+
+    // Return mock contract address
+    const mockAddress = `0x${Math.random().toString(16).substr(2, 40)}`
+    console.log(`Contract deployed to ${CHAIN_CONFIGS[chain].name}: ${mockAddress}`)
+
+    return mockAddress
   }
 }
 
-// Create and export a default instance with environment variables
-export const createBlockchainService = () => {
-  const network = (process.env.NEXT_PUBLIC_BLOCKCHAIN_NETWORK as BlockchainNetwork) || "ethereum"
-  const rpcUrl = process.env.NEXT_PUBLIC_BLOCKCHAIN_RPC_URL || ""
-  const contractAddress = process.env.NEXT_PUBLIC_BLOCKCHAIN_CONTRACT_ADDRESS || ""
-
-  return new BlockchainService({
-    network,
-    rpcUrl,
-    contractAddress,
-  })
+/**
+ * Factory helper – returns a new MultiChainService instance.
+ * Allows callers to create their own scoped service instead of
+ * relying on the shared singleton.
+ */
+export function createBlockchainService(chain: SupportedChain = "ethereum", useTestnet = false): MultiChainService {
+  return new MultiChainService(chain, useTestnet)
 }
+
+// Test blockchain connection
+export async function testBlockchainConnection(chain: SupportedChain): Promise<boolean> {
+  try {
+    const service = new MultiChainService(chain)
+    const blockNumber = await service.getBlockNumber()
+    console.log(`${CHAIN_CONFIGS[chain].name} - Latest block: ${blockNumber}`)
+    return blockNumber > 0
+  } catch (error) {
+    console.error(`Failed to connect to ${CHAIN_CONFIGS[chain].name}:`, error)
+    return false
+  }
+}
+
+// Export singleton instance
+export const multiChainService = new MultiChainService()

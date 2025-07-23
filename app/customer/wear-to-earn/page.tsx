@@ -1,11 +1,22 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, Filter, Trophy, Clock, Users, Award, MoreVertical, ChevronRight } from "lucide-react"
+import {
+  Search,
+  Filter,
+  Trophy,
+  Clock,
+  Users,
+  Award,
+  MoreVertical,
+  ChevronRight,
+  MapPin,
+  Shield,
+  Zap,
+} from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -40,6 +51,7 @@ export default function WearToEarn() {
       progress: 65,
       image: "/neon-streak-sneakers.png",
       brand: "Urban Athletics",
+      geoEnabled: true,
     },
     {
       id: 2,
@@ -53,6 +65,7 @@ export default function WearToEarn() {
       progress: 30,
       image: "/stylish-urban-jacket.png",
       brand: "Streetwear Co.",
+      geoEnabled: true,
     },
     {
       id: 3,
@@ -66,6 +79,7 @@ export default function WearToEarn() {
       progress: 15,
       image: "/products/tshirt.png",
       brand: "Fashion Forward",
+      geoEnabled: false,
     },
   ]
 
@@ -82,6 +96,37 @@ export default function WearToEarn() {
           </Button>
         </div>
       </div>
+
+      {/* Geo-Tracking Feature Highlight */}
+      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-500 text-white p-2 rounded-full">
+              <MapPin className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">New: Geo-Verified Tracking</CardTitle>
+              <CardDescription>Earn up to 50% bonus points with location-verified activity tracking</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-green-500" />
+              <span>NFC Product Authentication</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-blue-500" />
+              <span>GPS Location Verification</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-purple-500" />
+              <span>Anti-Fraud Protection</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex w-full max-w-sm items-center space-x-2 mb-4">
         <form onSubmit={handleSearch} className="flex w-full max-w-sm items-center space-x-2">
@@ -122,9 +167,17 @@ export default function WearToEarn() {
                   <div className="flex-1 p-6">
                     <div className="flex justify-between items-start">
                       <div>
-                        <Badge variant="secondary" className="bg-purple-100 text-purple-800 mb-2">
-                          {protocol.status}
-                        </Badge>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                            {protocol.status}
+                          </Badge>
+                          {protocol.geoEnabled && (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              Geo-Enabled
+                            </Badge>
+                          )}
+                        </div>
                         <h3 className="text-xl font-bold">{protocol.name}</h3>
                         <p className="text-sm text-muted-foreground">{protocol.brand}</p>
                         <p className="mt-2">{protocol.description}</p>
@@ -226,6 +279,7 @@ export default function WearToEarn() {
                     rewards: 15000,
                     duration: "3 months",
                     startDate: "November 1, 2025",
+                    geoEnabled: true,
                   },
                   {
                     name: "Luxury Accessories Program",
@@ -234,12 +288,21 @@ export default function WearToEarn() {
                     rewards: 8000,
                     duration: "6 months",
                     startDate: "August 15, 2025",
+                    geoEnabled: false,
                   },
                 ].map((challenge, i) => (
                   <Card key={i} className="overflow-hidden">
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start">
                         <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            {challenge.geoEnabled && (
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                Geo-Enabled
+                              </Badge>
+                            )}
+                          </div>
                           <h3 className="font-semibold">{challenge.name}</h3>
                           <p className="text-sm text-muted-foreground">{challenge.brand}</p>
                           <p className="mt-2 text-sm">{challenge.description}</p>

@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { Menu, Home, Package, Award, QrCode, Bell, User, LogOut, Wallet } from "lucide-react"
+import { Menu, Home, Package, Award, QrCode, Bell, User, LogOut, Wallet, Coins } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -50,6 +50,11 @@ export function CustomerNavbar() {
       name: "Rewards",
       href: "/customer/rewards",
       icon: Wallet,
+    },
+    {
+      name: "Staking",
+      href: "/customer/staking",
+      icon: Coins,
     },
   ]
 
@@ -167,6 +172,10 @@ export function CustomerNavbar() {
               <DropdownMenuItem onClick={() => handleNavigation("/customer/rewards")}>
                 <Wallet className="mr-2 h-4 w-4" />
                 Rewards: 2,450 pts
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleNavigation("/customer/staking")}>
+                <Coins className="mr-2 h-4 w-4" />
+                Staking: 500 PRIME
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
