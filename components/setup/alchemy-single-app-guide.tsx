@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Copy, ExternalLink, CheckCircle, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+/**
+ * Client component – demonstrates a single-app (single-chain) Alchemy setup.
+ */
 export function AlchemySingleAppGuide() {
   const [apiKey, setApiKey] = useState("")
   const [selectedChain, setSelectedChain] = useState("")
@@ -56,15 +59,22 @@ NEXT_PUBLIC_${chain.label.toUpperCase()}_TESTNET_RPC_URL="https://${chain.testne
     }
   }
 
+  const envSnippet = `# .env.local
+# Only Ethereum mainnet required for this project
+ETH_MAINNET_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/<ALCHEMY_KEY>"`
+
+  const copySnippet = async () => {
+    await navigator.clipboard.writeText(envSnippet)
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="max-w-3xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ExternalLink className="w-5 h-5" />
             Alchemy Single Chain Setup
           </CardTitle>
-          <CardDescription>Set up RPC endpoint for a single blockchain using Alchemy</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -116,6 +126,17 @@ NEXT_PUBLIC_${chain.label.toUpperCase()}_TESTNET_RPC_URL="https://${chain.testne
               </div>
             </div>
           )}
+
+          <p>
+            1. Create an Alchemy app for <strong>Ethereum Mainnet</strong> only.
+          </p>
+          <p>
+            2. Add the RPC URL to&nbsp;<code>.env.local</code>&nbsp;using your key placeholder.
+          </p>
+          <pre className="rounded-md bg-muted p-4 text-sm overflow-x-auto">{envSnippet}</pre>
+          <Button onClick={copySnippet} variant="secondary" size="sm">
+            <Copy className="mr-2 h-4 w-4" /> Copy to clipboard
+          </Button>
         </CardContent>
       </Card>
 

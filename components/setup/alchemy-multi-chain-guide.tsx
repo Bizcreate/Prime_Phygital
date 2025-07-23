@@ -1,7 +1,9 @@
 "use client"
 
+import { CardDescription } from "@/components/ui/card"
+
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,6 +11,10 @@ import { Badge } from "@/components/ui/badge"
 import { Copy, ExternalLink, CheckCircle, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+/**
+ * Client component – shows **examples only**.
+ * No real API keys or complete RPC URLs are shipped to the client.
+ */
 export function AlchemyMultiChainGuide() {
   const [apiKey, setApiKey] = useState("")
   const [copiedEnv, setCopiedEnv] = useState(false)
@@ -51,9 +57,19 @@ export function AlchemyMultiChainGuide() {
     }
   }
 
+  const envSnippet = `# .env.local
+# Replace <ALCHEMY_KEY> with your actual key – keep it on the server!
+ETH_MAINNET_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/<ALCHEMY_KEY>"
+POLYGON_MAINNET_RPC_URL="https://polygon-mainnet.g.alchemy.com/v2/<ALCHEMY_KEY>"
+BASE_MAINNET_RPC_URL="https://base-mainnet.g.alchemy.com/v2/<ALCHEMY_KEY>"`
+
+  const copySnippet = async () => {
+    await navigator.clipboard.writeText(envSnippet)
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="max-w-3xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ExternalLink className="w-5 h-5" />
@@ -110,6 +126,15 @@ export function AlchemyMultiChainGuide() {
               </div>
             ))}
           </div>
+
+          <p>1. Create a single Alchemy project and enable every chain you need (Ethereum, Polygon, Base, …).</p>
+          <p>
+            2. Copy the&nbsp;<code>&lt;ALCHEMY_KEY&gt;</code>&nbsp;value only – never commit full URLs.
+          </p>
+          <pre className="rounded-md bg-muted p-4 text-sm overflow-x-auto">{envSnippet}</pre>
+          <Button onClick={copySnippet} variant="secondary" size="sm">
+            <Copy className="mr-2 h-4 w-4" /> Copy to clipboard
+          </Button>
         </CardContent>
       </Card>
 
