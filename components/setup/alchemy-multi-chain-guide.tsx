@@ -1,189 +1,207 @@
 "use client"
 
-import { CardDescription } from "@/components/ui/card"
-
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Copy, ExternalLink, CheckCircle, AlertCircle } from "lucide-react"
+import { Copy, ExternalLink, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-/**
- * Client component – shows **examples only**.
- * No real API keys or complete RPC URLs are shipped to the client.
- */
+interface ChainConfig {
+  name: string
+  network: string
+  description: string
+  color: string
+}
+
+const SUPPORTED_CHAINS: ChainConfig[] = [
+  { name: "Ethereum", network: "ethereum", description: "Mainnet and Sepolia testnet", color: "bg-blue-500" },
+  { name: "Polygon", network: "polygon", description: "Mainnet and Amoy testnet", color: "bg-purple-500" },
+  { name: "Base", network: "base", description: "Mainnet and Sepolia testnet", color: "bg-blue-600" },
+  { name: "Arbitrum", network: "arbitrum", description: "Mainnet support", color: "bg-cyan-500" },
+  { name: "Optimism", network: "optimism", description: "Mainnet support", color: "bg-red-500" },
+]
+
 export function AlchemyMultiChainGuide() {
   const [apiKey, setApiKey] = useState("")
-  const [copiedEnv, setCopiedEnv] = useState(false)
+  const [generatedEnvs, setGeneratedEnvs] = useState<string[]>([])
   const { toast } = useToast()
 
-  const chains = [
-    { name: "Ethereum", network: "eth-mainnet", testnet: "eth-sepolia" },
-    { name: "Polygon", network: "polygon-mainnet", testnet: "polygon-amoy" },
-    { name: "Base", network: "base-mainnet", testnet: "base-sepolia" },
-    { name: "Arbitrum", network: "arb-mainnet", testnet: "arb-sepolia" },
-    { name: "Optimism", network: "opt-mainnet", testnet: "opt-sepolia" },
-  ]
-
-  const generateEnvVars = () => {
-    if (!apiKey.trim()) return ""
-
-    return chains
-      .map(
-        (chain) =>
-          `NEXT_PUBLIC_${chain.name.toUpperCase()}_RPC_URL="https://${chain.network}.g.alchemy.com/v2/${apiKey}"`,
-      )
-      .join("\n")
-  }
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedEnv(true)
-      setTimeout(() => setCopiedEnv(false), 2000)
+  const generateEnvironmentVariables = () => {
+    if (!apiKey.trim()) {
       toast({
-        title: "Copied!",
-        description: "Environment variables copied to clipboard",
-      })
-    } catch (err) {
-      toast({
-        title: "Failed to copy",
-        description: "Please copy manually",
+        title: "API Key Required",
+        description: "Please enter your Alchemy API key first.",
         variant: "destructive",
       })
+      return
     }
+
+    const envVars = [
+      `# Alchemy Multi-Chain Configuration`,
+      `BLOCKCHAIN_API_KEY="${apiKey}"`,
+      ``,
+      `# Ethereum`,
+      `NEXT_PUBLIC_ETHEREUM_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/${apiKey}"`,
+      `NEXT_PUBLIC_ETHEREUM_TESTNET_RPC_URL="https://eth-sepolia.g.alchemy.com/v2/${apiKey}"`,
+      ``,
+      `# Polygon`,
+      `NEXT_PUBLIC_POLYGON_RPC_URL="https://polygon-mainnet.g.alchemy.com/v2/${apiKey}"`,
+      `NEXT_PUBLIC_POLYGON_TESTNET_RPC_URL="https://polygon-amoy.g.alchemy.com/v2/${apiKey}"`,
+      ``,
+      `# Base`,
+      `NEXT_PUBLIC_BASE_RPC_URL="https://base-mainnet.g.alchemy.com/v2/${apiKey}"`,
+      `NEXT_PUBLIC_BASE_TESTNET_RPC_URL="https://base-sepolia.g.alchemy.com/v2/${apiKey}"`,
+      ``,
+      `# Arbitrum`,
+      `NEXT_PUBLIC_ARBITRUM_RPC_URL="https://arb-mainnet.g.alchemy.com/v2/${apiKey}"`,
+      ``,
+      `# Optimism`,
+      `NEXT_PUBLIC_OPTIMISM_RPC_URL="https://opt-mainnet.g.alchemy.com/v2/${apiKey}"`,
+    ]
+
+    setGeneratedEnvs(envVars)
+    toast({
+      title: "Environment Variables Generated",
+      description: "Copy these to your .env.local file.",
+    })
   }
 
-  const envSnippet = `# .env.local
-# Replace <ALCHEMY_KEY> with your actual key – keep it on the server!
-ETH_MAINNET_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/<ALCHEMY_KEY>"
-POLYGON_MAINNET_RPC_URL="https://polygon-mainnet.g.alchemy.com/v2/<ALCHEMY_KEY>"
-BASE_MAINNET_RPC_URL="https://base-mainnet.g.alchemy.com/v2/<ALCHEMY_KEY>"`
-
-  const copySnippet = async () => {
-    await navigator.clipboard.writeText(envSnippet)
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    toast({
+      title: "Copied to Clipboard",
+      description: "Environment variables copied successfully.",
+    })
   }
 
   return (
     <div className="space-y-6">
-      <Card className="max-w-3xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ExternalLink className="w-5 h-5" />
-            Alchemy Multi-Chain Setup
-          </CardTitle>
-          <CardDescription>
-            Set up RPC endpoints for multiple blockchains using a single Alchemy account
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="alchemy-key">Your Alchemy API Key</Label>
-            <Input
-              id="alchemy-key"
-              type="password"
-              placeholder="Enter your Alchemy API key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
-          </div>
-
-          {apiKey && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">Generated Environment Variables</h4>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyToClipboard(generateEnvVars())}
-                  className="flex items-center gap-2"
-                >
-                  {copiedEnv ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {copiedEnv ? "Copied!" : "Copy All"}
-                </Button>
-              </div>
-
-              <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                <pre>{generateEnvVars()}</pre>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {chains.map((chain) => (
-              <div key={chain.name} className="p-3 border rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h5 className="font-medium">{chain.name}</h5>
-                  <Badge variant="secondary">Supported</Badge>
-                </div>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <div>Mainnet: {chain.network}</div>
-                  <div>Testnet: {chain.testnet}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <p>1. Create a single Alchemy project and enable every chain you need (Ethereum, Polygon, Base, …).</p>
-          <p>
-            2. Copy the&nbsp;<code>&lt;ALCHEMY_KEY&gt;</code>&nbsp;value only – never commit full URLs.
-          </p>
-          <pre className="rounded-md bg-muted p-4 text-sm overflow-x-auto">{envSnippet}</pre>
-          <Button onClick={copySnippet} variant="secondary" size="sm">
-            <Copy className="mr-2 h-4 w-4" /> Copy to clipboard
-          </Button>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-amber-500" />
-            Setup Instructions
+            <span className="text-2xl">⚡</span>
+            Alchemy Multi-Chain Setup
           </CardTitle>
+          <CardDescription>Configure multiple blockchain networks with a single Alchemy account</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-medium">
-                1
-              </div>
-              <div>
-                <p className="font-medium">Create Alchemy Account</p>
-                <p className="text-sm text-gray-600">Sign up at alchemy.com and create a new app</p>
-              </div>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="api-key">Alchemy API Key</Label>
+              <Input
+                id="api-key"
+                type="password"
+                placeholder="Enter your Alchemy API key"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
             </div>
 
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-medium">
-                2
-              </div>
-              <div>
-                <p className="font-medium">Get API Key</p>
-                <p className="text-sm text-gray-600">Copy your API key from the Alchemy dashboard</p>
-              </div>
-            </div>
+            <Button onClick={generateEnvironmentVariables} className="w-full">
+              Generate Environment Variables
+            </Button>
+          </div>
 
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-medium">
-                3
-              </div>
-              <div>
-                <p className="font-medium">Add Environment Variables</p>
-                <p className="text-sm text-gray-600">Paste the generated variables into your .env.local file</p>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {SUPPORTED_CHAINS.map((chain) => (
+              <Card
+                key={chain.network}
+                className="border-l-4"
+                style={{ borderLeftColor: chain.color.replace("bg-", "#") }}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold">{chain.name}</h3>
+                      <p className="text-sm text-muted-foreground">{chain.description}</p>
+                    </div>
+                    <Badge variant="secondary">{chain.network}</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-medium">
-                4
+          {generatedEnvs.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  Generated Environment Variables
+                </CardTitle>
+                <CardDescription>Copy these to your .env.local file</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">{generatedEnvs.join("\n")}</pre>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="absolute top-2 right-2 bg-transparent"
+                    onClick={() => copyToClipboard(generatedEnvs.join("\n"))}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Setup Instructions</h3>
+            <div className="space-y-2">
+              <div className="flex items-start gap-3">
+                <Badge variant="outline" className="mt-1">
+                  1
+                </Badge>
+                <div>
+                  <p className="font-medium">Create Alchemy Account</p>
+                  <p className="text-sm text-muted-foreground">
+                    Sign up at{" "}
+                    <a
+                      href="https://alchemy.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline inline-flex items-center gap-1"
+                    >
+                      alchemy.com <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium">Deploy to Vercel</p>
-                <p className="text-sm text-gray-600">Add the same variables to your Vercel project settings</p>
+              <div className="flex items-start gap-3">
+                <Badge variant="outline" className="mt-1">
+                  2
+                </Badge>
+                <div>
+                  <p className="font-medium">Create Apps for Each Network</p>
+                  <p className="text-sm text-muted-foreground">
+                    Create separate apps for each blockchain network you want to support
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Badge variant="outline" className="mt-1">
+                  3
+                </Badge>
+                <div>
+                  <p className="font-medium">Get API Key</p>
+                  <p className="text-sm text-muted-foreground">Copy the API key from your Alchemy dashboard</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Badge variant="outline" className="mt-1">
+                  4
+                </Badge>
+                <div>
+                  <p className="font-medium">Generate & Copy Environment Variables</p>
+                  <p className="text-sm text-muted-foreground">
+                    Use the form above to generate your environment variables
+                  </p>
+                </div>
               </div>
             </div>
           </div>

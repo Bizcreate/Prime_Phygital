@@ -1,191 +1,195 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 import { Copy, ExternalLink, CheckCircle, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-/**
- * Client component – demonstrates a single-app (single-chain) Alchemy setup.
- */
 export function AlchemySingleAppGuide() {
   const [apiKey, setApiKey] = useState("")
-  const [selectedChain, setSelectedChain] = useState("")
-  const [copiedEnv, setCopiedEnv] = useState(false)
+  const [selectedNetwork, setSelectedNetwork] = useState("ethereum")
+  const [generatedEnv, setGeneratedEnv] = useState("")
   const { toast } = useToast()
 
-  const chains = [
-    { value: "ethereum", label: "Ethereum", network: "eth-mainnet", testnet: "eth-sepolia" },
-    { value: "polygon", label: "Polygon", network: "polygon-mainnet", testnet: "polygon-amoy" },
-    { value: "base", label: "Base", network: "base-mainnet", testnet: "base-sepolia" },
-    { value: "arbitrum", label: "Arbitrum", network: "arb-mainnet", testnet: "arb-sepolia" },
-    { value: "optimism", label: "Optimism", network: "opt-mainnet", testnet: "opt-sepolia" },
+  const networks = [
+    { id: "ethereum", name: "Ethereum", endpoint: "eth-mainnet" },
+    { id: "polygon", name: "Polygon", endpoint: "polygon-mainnet" },
+    { id: "base", name: "Base", endpoint: "base-mainnet" },
+    { id: "arbitrum", name: "Arbitrum", endpoint: "arb-mainnet" },
+    { id: "optimism", name: "Optimism", endpoint: "opt-mainnet" },
   ]
 
-  const generateEnvVars = () => {
-    if (!apiKey.trim() || !selectedChain) return ""
-
-    const chain = chains.find((c) => c.value === selectedChain)
-    if (!chain) return ""
-
-    return `# Primary blockchain configuration
-BLOCKCHAIN_API_KEY="${apiKey}"
-NEXT_PUBLIC_BLOCKCHAIN_NETWORK="${selectedChain}"
-NEXT_PUBLIC_${chain.label.toUpperCase()}_RPC_URL="https://${chain.network}.g.alchemy.com/v2/${apiKey}"
-
-# Optional testnet configuration
-NEXT_PUBLIC_${chain.label.toUpperCase()}_TESTNET_RPC_URL="https://${chain.testnet}.g.alchemy.com/v2/${apiKey}"`
-  }
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedEnv(true)
-      setTimeout(() => setCopiedEnv(false), 2000)
+  const generateEnvironmentVariable = () => {
+    if (!apiKey.trim()) {
       toast({
-        title: "Copied!",
-        description: "Environment variables copied to clipboard",
-      })
-    } catch (err) {
-      toast({
-        title: "Failed to copy",
-        description: "Please copy manually",
+        title: "API Key Required",
+        description: "Please enter your Alchemy API key first.",
         variant: "destructive",
       })
+      return
     }
+
+    const network = networks.find((n) => n.id === selectedNetwork)
+    if (!network) return
+
+    const envVar = `# Alchemy Single Network Configuration
+BLOCKCHAIN_API_KEY="${apiKey}"
+NEXT_PUBLIC_BLOCKCHAIN_NETWORK="${selectedNetwork}"
+NEXT_PUBLIC_${selectedNetwork.toUpperCase()}_RPC_URL="https://${network.endpoint}.g.alchemy.com/v2/${apiKey}"`
+
+    setGeneratedEnv(envVar)
+    toast({
+      title: "Environment Variable Generated",
+      description: "Copy this to your .env.local file.",
+    })
   }
 
-  const envSnippet = `# .env.local
-# Only Ethereum mainnet required for this project
-ETH_MAINNET_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/<ALCHEMY_KEY>"`
-
-  const copySnippet = async () => {
-    await navigator.clipboard.writeText(envSnippet)
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    toast({
+      title: "Copied to Clipboard",
+      description: "Environment variable copied successfully.",
+    })
   }
 
   return (
     <div className="space-y-6">
-      <Card className="max-w-3xl">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ExternalLink className="w-5 h-5" />
-            Alchemy Single Chain Setup
+            <span className="text-2xl">🔗</span>
+            Alchemy Single Network Setup
           </CardTitle>
+          <CardDescription>Configure a single blockchain network with Alchemy</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="chain-select">Select Blockchain</Label>
-              <Select value={selectedChain} onValueChange={setSelectedChain}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a blockchain" />
-                </SelectTrigger>
-                <SelectContent>
-                  {chains.map((chain) => (
-                    <SelectItem key={chain.value} value={chain.value}>
-                      {chain.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <CardContent className="space-y-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-yellow-800">Single Network Mode</h4>
+                <p className="text-sm text-yellow-700">
+                  This setup configures only one blockchain network. For multi-chain support, use the Multi-Chain setup
+                  instead.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="network">Select Network</Label>
+              <select
+                id="network"
+                className="w-full p-2 border border-gray-300 rounded-md"
+                value={selectedNetwork}
+                onChange={(e) => setSelectedNetwork(e.target.value)}
+              >
+                {networks.map((network) => (
+                  <option key={network.id} value={network.id}>
+                    {network.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="api-key">Alchemy API Key</Label>
               <Input
                 id="api-key"
                 type="password"
-                placeholder="Enter your API key"
+                placeholder="Enter your Alchemy API key"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
               />
             </div>
+
+            <Button onClick={generateEnvironmentVariable} className="w-full">
+              Generate Environment Variable
+            </Button>
           </div>
 
-          {apiKey && selectedChain && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">Generated Environment Variables</h4>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyToClipboard(generateEnvVars())}
-                  className="flex items-center gap-2"
-                >
-                  {copiedEnv ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {copiedEnv ? "Copied!" : "Copy"}
-                </Button>
-              </div>
-
-              <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                <pre>{generateEnvVars()}</pre>
-              </div>
-            </div>
+          {generatedEnv && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  Generated Environment Variable
+                </CardTitle>
+                <CardDescription>Copy this to your .env.local file</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">{generatedEnv}</pre>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="absolute top-2 right-2 bg-transparent"
+                    onClick={() => copyToClipboard(generatedEnv)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
-          <p>
-            1. Create an Alchemy app for <strong>Ethereum Mainnet</strong> only.
-          </p>
-          <p>
-            2. Add the RPC URL to&nbsp;<code>.env.local</code>&nbsp;using your key placeholder.
-          </p>
-          <pre className="rounded-md bg-muted p-4 text-sm overflow-x-auto">{envSnippet}</pre>
-          <Button onClick={copySnippet} variant="secondary" size="sm">
-            <Copy className="mr-2 h-4 w-4" /> Copy to clipboard
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-amber-500" />
-            Quick Setup Steps
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-medium">
-                1
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Setup Instructions</h3>
+            <div className="space-y-2">
+              <div className="flex items-start gap-3">
+                <Badge variant="outline" className="mt-1">
+                  1
+                </Badge>
+                <div>
+                  <p className="font-medium">Create Alchemy Account</p>
+                  <p className="text-sm text-muted-foreground">
+                    Sign up at{" "}
+                    <a
+                      href="https://alchemy.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline inline-flex items-center gap-1"
+                    >
+                      alchemy.com <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium">Create Alchemy App</p>
-                <p className="text-sm text-gray-600">Go to alchemy.com and create a new application</p>
+              <div className="flex items-start gap-3">
+                <Badge variant="outline" className="mt-1">
+                  2
+                </Badge>
+                <div>
+                  <p className="font-medium">Create App for Selected Network</p>
+                  <p className="text-sm text-muted-foreground">
+                    Create an app for the {networks.find((n) => n.id === selectedNetwork)?.name} network
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-medium">
-                2
+              <div className="flex items-start gap-3">
+                <Badge variant="outline" className="mt-1">
+                  3
+                </Badge>
+                <div>
+                  <p className="font-medium">Get API Key</p>
+                  <p className="text-sm text-muted-foreground">Copy the API key from your Alchemy dashboard</p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium">Select Network</p>
-                <p className="text-sm text-gray-600">Choose your preferred blockchain network</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-medium">
-                3
-              </div>
-              <div>
-                <p className="font-medium">Copy API Key</p>
-                <p className="text-sm text-gray-600">Get your API key from the app dashboard</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-medium">
-                4
-              </div>
-              <div>
-                <p className="font-medium">Configure Environment</p>
-                <p className="text-sm text-gray-600">Add the generated variables to your .env.local file</p>
+              <div className="flex items-start gap-3">
+                <Badge variant="outline" className="mt-1">
+                  4
+                </Badge>
+                <div>
+                  <p className="font-medium">Generate & Copy Environment Variable</p>
+                  <p className="text-sm text-muted-foreground">
+                    Use the form above to generate your environment variable
+                  </p>
+                </div>
               </div>
             </div>
           </div>
