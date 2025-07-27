@@ -1,6 +1,5 @@
-import jwt from "jsonwebtoken"
 import bcrypt from "bcryptjs"
-import { cookies } from "next/headers"
+import jwt from "jsonwebtoken"
 import { neon } from "@neondatabase/serverless"
 
 const sql = neon(process.env.DATABASE_URL!)
@@ -8,145 +7,136 @@ const sql = neon(process.env.DATABASE_URL!)
 export interface User {
   id: string
   email: string
-  firstName: string
-  lastName: string
-  role: string
-  avatarUrl?: string
-  emailVerified: boolean
-  createdAt: string
+  name: string
+  role: "admin" | "user"
+  createdAt: Date
+  updatedAt: Date
 }
 
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 10)
+export interface CreateUserData {
+  email: string
+  password: string
+  name: string
+  role?: "admin" | "user"
 }
 
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return bcrypt.compare(password, hashedPassword)
+export interface AuthenticateUserData {
+  email: string
+  password: string
 }
 
-export function generateToken(user: User): string {
-  return jwt.sign(
-    {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    },
-    process.env.JWT_SECRET!,
-    { expiresIn: "7d" },
-  )
-}
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"
 
-export function verifyToken(token: string): any {
-  try {
-    return jwt.verify(token, process.env.JWT_SECRET!)
-  } catch (error) {
-    return null
-  }
-}
+export async function createUser(userData: CreateUserData): Promise<User> {
+  const { email, password, name, role = "user" } = userData
 
-export async function getCurrentUser(): Promise<User | null> {
-  try {
-    const cookieStore = cookies()
-    const token = cookieStore.get("auth-token")?.value
-
-    if (!token) {
-      return null
-    }
-
-    const decoded = verifyToken(token)
-    if (!decoded) {
-      return null
-    }
-
-    const users = await sql`
-      SELECT id, email, first_name, last_name, role, avatar_url, email_verified, created_at
-      FROM users 
-      WHERE id = ${decoded.userId}
-    `
-
-    if (users.length === 0) {
-      return null
-    }
-
-    const user = users[0]
-    return {
-      id: user.id,
-      email: user.email,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      role: user.role,
-      avatarUrl: user.avatar_url,
-      emailVerified: user.email_verified,
-      createdAt: user.created_at,
-    }
-  } catch (error) {
-    console.error("Error getting current user:", error)
-    return null
-  }
-}
-
-export async function createUser(email: string, password: string, firstName: string, lastName: string): Promise<User> {
-  const hashedPassword = await hashPassword(password)
-
-  const users = await sql`
-    INSERT INTO users (email, password_hash, first_name, last_name)
-    VALUES (${email}, ${hashedPassword}, ${firstName}, ${lastName})
-    RETURNING id, email, first_name, last_name, role, avatar_url, email_verified, created_at
+  // Check if user already exists
+  const existingUser = await sql`
+    SELECT id FROM users WHERE email = ${email}
   `
 
-  const user = users[0]
+  if (existingUser.length > 0) {
+    throw new Error("User already exists")
+  }
 
-  // Initialize user rewards
-  await sql`
-    INSERT INTO user_rewards (user_id, total_points, lifetime_points)
-    VALUES (${user.id}, 0, 0)
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, 12)
+
+  // Create user
+  const result = await sql`
+    INSERT INTO users (email, password, name, role, created_at, updated_at)
+    VALUES (${email}, ${hashedPassword}, ${name}, ${role}, NOW(), NOW())
+    RETURNING id, email, name, role, created_at, updated_at
   `
 
+  const user = result[0]
   return {
     id: user.id,
     email: user.email,
-    firstName: user.first_name,
-    lastName: user.last_name,
+    name: user.name,
     role: user.role,
-    avatarUrl: user.avatar_url,
-    emailVerified: user.email_verified,
-    createdAt: user.created_at,
+    createdAt: new Date(user.created_at),
+    updatedAt: new Date(user.updated_at),
   }
 }
 
-export async function authenticateUser(email: string, password: string): Promise<User | null> {
-  const users = await sql`
-    SELECT id, email, password_hash, first_name, last_name, role, avatar_url, email_verified, created_at
+export async function authenticateUser(credentials: AuthenticateUserData): Promise<{ user: User; token: string }> {
+  const { email, password } = credentials
+
+  // Find user
+  const result = await sql`
+    SELECT id, email, password, name, role, created_at, updated_at
     FROM users 
     WHERE email = ${email}
   `
 
-  if (users.length === 0) {
-    return null
+  if (result.length === 0) {
+    throw new Error("Invalid credentials")
   }
 
-  const user = users[0]
-  const isValidPassword = await verifyPassword(password, user.password_hash)
+  const userData = result[0]
+
+  // Verify password
+  const isValidPassword = await bcrypt.compare(password, userData.password)
 
   if (!isValidPassword) {
-    return null
+    throw new Error("Invalid credentials")
   }
 
-  // Update last login
-  await sql`
-    UPDATE users 
-    SET last_login = NOW() 
-    WHERE id = ${user.id}
-  `
+  // Create user object
+  const user: User = {
+    id: userData.id,
+    email: userData.email,
+    name: userData.name,
+    role: userData.role,
+    createdAt: new Date(userData.created_at),
+    updatedAt: new Date(userData.updated_at),
+  }
 
-  return {
-    id: user.id,
-    email: user.email,
-    firstName: user.first_name,
-    lastName: user.last_name,
-    role: user.role,
-    avatarUrl: user.avatar_url,
-    emailVerified: user.email_verified,
-    createdAt: user.created_at,
+  // Generate JWT token
+  const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "7d" })
+
+  return { user, token }
+}
+
+export async function getCurrentUser(token: string): Promise<User | null> {
+  try {
+    // Verify and decode token
+    const decoded = jwt.verify(token, JWT_SECRET) as any
+
+    // Get user from database
+    const result = await sql`
+      SELECT id, email, name, role, created_at, updated_at
+      FROM users 
+      WHERE id = ${decoded.userId}
+    `
+
+    if (result.length === 0) {
+      return null
+    }
+
+    const userData = result[0]
+    return {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      createdAt: new Date(userData.created_at),
+      updatedAt: new Date(userData.updated_at),
+    }
+  } catch (error) {
+    return null
+  }
+}
+
+export function generateToken(user: User): string {
+  return jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "7d" })
+}
+
+export function verifyToken(token: string): any {
+  try {
+    return jwt.verify(token, JWT_SECRET)
+  } catch (error) {
+    throw new Error("Invalid token")
   }
 }

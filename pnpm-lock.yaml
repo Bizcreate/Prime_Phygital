@@ -151,7 +151,7 @@ importers:
         specifier: ^19
         version: 19.0.0
       autoprefixer:
-        specifier: ^10.4.20
+        specifier: ^10.4.16
         version: 10.4.20(postcss@8.5.3)
       eslint:
         specifier: ^8.51.0

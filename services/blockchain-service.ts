@@ -1,8 +1,8 @@
 import { ethers } from "ethers"
 
 export interface ChainConfig {
-  id: number
   name: string
+  chainId: number
   rpcUrl: string
   nativeCurrency: {
     name: string
@@ -14,44 +14,44 @@ export interface ChainConfig {
 
 export const CHAIN_CONFIGS: Record<string, ChainConfig> = {
   ethereum: {
-    id: 1,
-    name: "Ethereum Mainnet",
-    rpcUrl: process.env.NEXT_PUBLIC_ETHEREUM_RPC_URL || "https://eth-mainnet.g.alchemy.com/v2/demo",
+    name: "Ethereum",
+    chainId: 1,
+    rpcUrl: `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
     nativeCurrency: {
-      name: "Ether",
+      name: "Ethereum",
       symbol: "ETH",
       decimals: 18,
     },
     blockExplorer: "https://etherscan.io",
   },
   polygon: {
-    id: 137,
-    name: "Polygon Mainnet",
-    rpcUrl: process.env.NEXT_PUBLIC_POLYGON_RPC_URL || "https://polygon-mainnet.g.alchemy.com/v2/demo",
+    name: "Polygon",
+    chainId: 137,
+    rpcUrl: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
     nativeCurrency: {
-      name: "MATIC",
+      name: "Polygon",
       symbol: "MATIC",
       decimals: 18,
     },
     blockExplorer: "https://polygonscan.com",
   },
   base: {
-    id: 8453,
     name: "Base",
-    rpcUrl: process.env.NEXT_PUBLIC_BASE_RPC_URL || "https://base-mainnet.g.alchemy.com/v2/demo",
+    chainId: 8453,
+    rpcUrl: `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
     nativeCurrency: {
-      name: "Ether",
+      name: "Ethereum",
       symbol: "ETH",
       decimals: 18,
     },
     blockExplorer: "https://basescan.org",
   },
   abstract: {
-    id: 11124,
-    name: "Abstract Testnet",
+    name: "Abstract",
+    chainId: 11124,
     rpcUrl: process.env.NEXT_PUBLIC_ABSTRACT_RPC_URL || "https://api.testnet.abs.xyz",
     nativeCurrency: {
-      name: "ETH",
+      name: "Ethereum",
       symbol: "ETH",
       decimals: 18,
     },
@@ -80,14 +80,9 @@ export class BlockchainService {
     return ethers.formatEther(balance)
   }
 
-  async testConnection(): Promise<boolean> {
-    try {
-      await this.getBlockNumber()
-      return true
-    } catch (error) {
-      console.error("Blockchain connection test failed:", error)
-      return false
-    }
+  async sendTransaction(transaction: any): Promise<string> {
+    const tx = await this.provider.sendTransaction(transaction)
+    return tx.hash
   }
 
   getChainConfig(): ChainConfig {
@@ -95,25 +90,17 @@ export class BlockchainService {
   }
 }
 
-export async function testBlockchainConnection(chainName: string): Promise<{
-  success: boolean
-  blockNumber?: number
-  error?: string
-}> {
+export async function testBlockchainConnection(chainName: string): Promise<boolean> {
   try {
     const service = new BlockchainService(chainName)
-    const blockNumber = await service.getBlockNumber()
-    return { success: true, blockNumber }
+    await service.getBlockNumber()
+    return true
   } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    }
+    console.error(`Failed to connect to ${chainName}:`, error)
+    return false
   }
 }
 
 export function createBlockchainService(chainName: string): BlockchainService {
   return new BlockchainService(chainName)
 }
-
-export default BlockchainService
