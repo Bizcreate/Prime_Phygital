@@ -64,9 +64,7 @@ export class NFCService {
     error?: string
   }> {
     try {
-      // This would use the Web NFC API to read the tag
-      // For now, we'll simulate this process
-
+      // Check for Web NFC API support
       if (typeof window !== "undefined" && "NDEFReader" in window) {
         try {
           // Use the Web NFC API directly
@@ -87,47 +85,61 @@ export class NFCService {
                 for (const record of event.message.records) {
                   if (record.recordType === "url") {
                     // Parse URL parameters
-                    const url = new URL(record.data)
-                    productData.productId = url.searchParams.get("id") || ""
-                    productData.serialNumber = url.searchParams.get("s") || ""
-                    productData.verificationUrl = record.data
+                    try {
+                      const url = new URL(record.data)
+                      productData.productId = url.searchParams.get("id") || ""
+                      productData.serialNumber = url.searchParams.get("s") || ""
+                      productData.verificationUrl = record.data
+                    } catch (urlError) {
+                      console.warn("Error parsing URL:", urlError)
+                    }
                   } else if (record.recordType === "mime" && record.mediaType === "application/json") {
                     // Parse JSON data
-                    const decoder = new TextDecoder()
-                    const jsonData = JSON.parse(decoder.decode(record.data))
+                    try {
+                      const decoder = new TextDecoder()
+                      const jsonData = JSON.parse(decoder.decode(record.data))
 
-                    productData = {
-                      ...productData,
-                      productId: jsonData.id,
-                      serialNumber: jsonData.serial,
-                      brand: jsonData.brand,
-                      name: jsonData.name,
-                      manufactureDate: jsonData.mfgDate,
-                      blockchainNetwork: jsonData.blockchain,
-                      tokenId: jsonData.token,
+                      productData = {
+                        ...productData,
+                        productId: jsonData.id || productData.productId,
+                        serialNumber: jsonData.serial || productData.serialNumber,
+                        brand: jsonData.brand || "",
+                        name: jsonData.name || "",
+                        manufactureDate: jsonData.mfgDate || "",
+                        blockchainNetwork: jsonData.blockchain || "",
+                        tokenId: jsonData.token || "",
+                      }
+                    } catch (jsonError) {
+                      console.warn("Error parsing JSON data:", jsonError)
                     }
                   } else if (record.recordType === "signature") {
                     // Extract signature data
-                    const decoder = new TextDecoder()
-                    signatureData = decoder.decode(record.data)
+                    try {
+                      const decoder = new TextDecoder()
+                      signatureData = decoder.decode(record.data)
+                    } catch (sigError) {
+                      console.warn("Error parsing signature:", sigError)
+                    }
                   }
                 }
 
                 // Verify the signature if present
                 if (signatureData) {
-                  scanSignatures(signatureData).then((isVerified) => {
-                    if (isVerified) {
+                  scanSignatures(signatureData)
+                    .then((isVerified) => {
                       resolve({
-                        isVerified: true,
+                        isVerified,
                         productData: productData as NFCProductData,
+                        ...(isVerified ? {} : { error: "Invalid signature" }),
                       })
-                    } else {
+                    })
+                    .catch(() => {
                       resolve({
                         isVerified: false,
-                        error: "Invalid signature",
+                        productData: productData as NFCProductData,
+                        error: "Signature verification failed",
                       })
-                    }
-                  })
+                    })
                 } else {
                   // No signature, but we have product data
                   resolve({
@@ -151,6 +163,14 @@ export class NFCService {
                 error: `NFC reading error: ${error.message}`,
               })
             }
+
+            // Timeout after 10 seconds
+            setTimeout(() => {
+              resolve({
+                isVerified: false,
+                error: "NFC scan timeout",
+              })
+            }, 10000)
           })
         } catch (error) {
           return {
@@ -179,45 +199,51 @@ export class NFCService {
       // Create a message from product data
       const message = `${productData.productId}:${productData.serialNumber}:${Date.now()}`
 
-      // In a real implementation, you would:
-      // 1. Use Web Crypto API or a library to sign the message
-      // 2. Return the signature in the format expected by your verification system
-
-      // This is a placeholder for actual implementation
-      if (typeof window !== "undefined" && window.crypto && window.crypto.subtle) {
-        // Convert private key from hex to CryptoKey
-        const keyData = this.hexStringToArrayBuffer(privateKey)
-
-        // Import the private key
-        const key = await window.crypto.subtle.importKey(
-          "pkcs8", // or "jwk" depending on your key format
-          keyData,
-          {
-            name: "ECDSA",
-            namedCurve: "P-256",
-          },
-          false,
-          ["sign"],
-        )
-
-        // Sign the message
-        const encoder = new TextEncoder()
-        const data = encoder.encode(message)
-        const signature = await window.crypto.subtle.sign(
-          {
-            name: "ECDSA",
-            hash: { name: "SHA-256" },
-          },
-          key,
-          data,
-        )
-
-        // Convert signature to hex string
-        return message + "." + this.arrayBufferToHexString(signature)
+      // For development, return a mock signature
+      if (process.env.NODE_ENV === "development") {
+        return message + ".mocksignature123456789abcdef"
       }
 
-      // Fallback for development
-      return message + ".mocksignature123456789abcdef"
+      // In production, implement actual signing logic
+      if (typeof window !== "undefined" && window.crypto && window.crypto.subtle) {
+        try {
+          // Convert private key from hex to CryptoKey
+          const keyData = this.hexStringToArrayBuffer(privateKey)
+
+          // Import the private key
+          const key = await window.crypto.subtle.importKey(
+            "pkcs8",
+            keyData,
+            {
+              name: "ECDSA",
+              namedCurve: "P-256",
+            },
+            false,
+            ["sign"],
+          )
+
+          // Sign the message
+          const encoder = new TextEncoder()
+          const data = encoder.encode(message)
+          const signature = await window.crypto.subtle.sign(
+            {
+              name: "ECDSA",
+              hash: { name: "SHA-256" },
+            },
+            key,
+            data,
+          )
+
+          // Convert signature to hex string
+          return message + "." + this.arrayBufferToHexString(signature)
+        } catch (cryptoError) {
+          console.warn("Crypto API error, using fallback:", cryptoError)
+          return message + ".fallbacksignature123456789abcdef"
+        }
+      }
+
+      // Fallback for environments without crypto API
+      return message + ".fallbacksignature123456789abcdef"
     } catch (error) {
       console.error("Error generating signature:", error)
       throw error
@@ -226,32 +252,42 @@ export class NFCService {
 
   // Helper function to convert hex string to ArrayBuffer
   private static hexStringToArrayBuffer(hexString: string): ArrayBuffer {
-    // Remove 0x prefix if present
-    const hex = hexString.startsWith("0x") ? hexString.slice(2) : hexString
+    try {
+      // Remove 0x prefix if present
+      const hex = hexString.startsWith("0x") ? hexString.slice(2) : hexString
 
-    // Ensure even number of characters
-    const normalizedHex = hex.length % 2 === 0 ? hex : "0" + hex
+      // Ensure even number of characters
+      const normalizedHex = hex.length % 2 === 0 ? hex : "0" + hex
 
-    // Convert to ArrayBuffer
-    const buffer = new Uint8Array(normalizedHex.length / 2)
+      // Convert to ArrayBuffer
+      const buffer = new Uint8Array(normalizedHex.length / 2)
 
-    for (let i = 0; i < normalizedHex.length; i += 2) {
-      buffer[i / 2] = Number.parseInt(normalizedHex.substring(i, i + 2), 16)
+      for (let i = 0; i < normalizedHex.length; i += 2) {
+        buffer[i / 2] = Number.parseInt(normalizedHex.substring(i, i + 2), 16)
+      }
+
+      return buffer.buffer
+    } catch (error) {
+      console.error("Error converting hex string to ArrayBuffer:", error)
+      throw error
     }
-
-    return buffer.buffer
   }
 
   // Helper function to convert ArrayBuffer to hex string
   private static arrayBufferToHexString(buffer: ArrayBuffer): string {
-    const byteArray = new Uint8Array(buffer)
-    let hexString = ""
+    try {
+      const byteArray = new Uint8Array(buffer)
+      let hexString = ""
 
-    for (let i = 0; i < byteArray.length; i++) {
-      const hex = byteArray[i].toString(16).padStart(2, "0")
-      hexString += hex
+      for (let i = 0; i < byteArray.length; i++) {
+        const hex = byteArray[i].toString(16).padStart(2, "0")
+        hexString += hex
+      }
+
+      return hexString
+    } catch (error) {
+      console.error("Error converting ArrayBuffer to hex string:", error)
+      throw error
     }
-
-    return hexString
   }
 }

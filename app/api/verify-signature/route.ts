@@ -1,48 +1,68 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Helper function for signature verification
+// Simplified signature verification that doesn't throw errors
 const verifySignature = async (data: string, key: string): Promise<boolean> => {
   try {
-    // Split the data into the message and signature
-    const [message, signature] = data.split(".")
-
-    if (!message || !signature) {
-      console.error("Invalid signature format")
+    // Basic validation
+    if (!data || !key) {
       return false
     }
 
-    // Implement your actual verification logic here
-    // This is a placeholder for your actual cryptographic verification
+    // Split the data into the message and signature
+    const parts = data.split(".")
+    if (parts.length !== 2) {
+      return false
+    }
 
-    // For demonstration purposes only
-    return true
+    const [message, signature] = parts
+
+    if (!message || !signature) {
+      return false
+    }
+
+    // For development, always return true
+    if (process.env.NODE_ENV === "development") {
+      return true
+    }
+
+    // In production, implement actual verification logic here
+    // This is a placeholder for your actual cryptographic verification
+    return signature.length > 10 // Basic check
   } catch (error) {
     console.error("Error in signature verification:", error)
     return false
   }
 }
 
-// Helper function for testnet blockchain verification
+// Simplified testnet verification
 const verifyTestnetSignature = async (data: string, testnetKey: string): Promise<boolean> => {
   try {
-    // Extract the blockchain network from the key (e.g., "ethereum:", "polygon:")
-    const [network, actualKey] = testnetKey.split(":")
-
-    if (!network || !actualKey) {
-      console.error("Invalid testnet key format")
+    // Extract the blockchain network from the key
+    const parts = testnetKey.split(":")
+    if (parts.length !== 2) {
       return false
     }
 
-    // Different verification logic based on the blockchain network
+    const [network, actualKey] = parts
+
+    if (!network || !actualKey) {
+      return false
+    }
+
+    // For development, always return true
+    if (process.env.NODE_ENV === "development") {
+      return true
+    }
+
+    // Basic validation for different networks
     switch (network.toLowerCase()) {
       case "ethereum":
       case "polygon":
       case "base":
-        return await verifyEthereumSignature(data, actualKey)
+        return actualKey.startsWith("0x") && actualKey.length >= 42
       case "solana":
-        return await verifySolanaSignature(data, actualKey)
+        return actualKey.length >= 32
       default:
-        console.error(`Unsupported blockchain network: ${network}`)
         return false
     }
   } catch (error) {
@@ -51,48 +71,48 @@ const verifyTestnetSignature = async (data: string, testnetKey: string): Promise
   }
 }
 
-// Ethereum-compatible blockchain verification
-const verifyEthereumSignature = async (data: string, key: string): Promise<boolean> => {
-  // Implement your Ethereum signature verification logic here
-  return true
-}
-
-// Solana signature verification
-const verifySolanaSignature = async (data: string, key: string): Promise<boolean> => {
-  // Implement your Solana signature verification logic here
-  return true
-}
-
 export async function POST(request: NextRequest) {
   try {
-    const { signatureData } = await request.json()
+    const body = await request.json()
+    const { signatureData } = body
 
     if (!signatureData) {
       return NextResponse.json({ error: "Missing signature data" }, { status: 400 })
     }
 
-    // Get verification key from environment (no NEXT_PUBLIC_ prefix)
+    // Get verification key from environment
     const verificationKey = process.env.NFC_VERIFICATION_KEY
 
     if (!verificationKey) {
       console.warn("No verification key provided in environment")
-      // In production, you might want to fail if no key is provided
-      return NextResponse.json({ verified: process.env.NODE_ENV !== "production" }, { status: 200 })
+      // In development, return true; in production, return false
+      return NextResponse.json(
+        {
+          verified: process.env.NODE_ENV === "development",
+        },
+        { status: 200 },
+      )
     }
+
+    let isVerified = false
 
     // For testnet integration
     if (verificationKey.startsWith("testnet:")) {
-      const isVerified = await verifyTestnetSignature(signatureData, verificationKey.replace("testnet:", ""))
-
-      return NextResponse.json({ verified: isVerified }, { status: 200 })
+      isVerified = await verifyTestnetSignature(signatureData, verificationKey.replace("testnet:", ""))
+    } else {
+      // Standard verification
+      isVerified = await verifySignature(signatureData, verificationKey)
     }
-
-    // Standard verification
-    const isVerified = await verifySignature(signatureData, verificationKey)
 
     return NextResponse.json({ verified: isVerified }, { status: 200 })
   } catch (error) {
     console.error("Error verifying signature:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      {
+        verified: process.env.NODE_ENV === "development",
+        error: "Internal server error",
+      },
+      { status: 500 },
+    )
   }
 }

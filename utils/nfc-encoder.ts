@@ -75,9 +75,15 @@ export function checkNFCSupport(): boolean {
   return typeof window !== "undefined" && "NDEFReader" in window
 }
 
-// Client-side function that calls the server action for verification
+// Simplified signature verification that doesn't throw errors
 export const scanSignatures = async (signatureData: string): Promise<boolean> => {
   try {
+    // Basic validation
+    if (!signatureData || typeof signatureData !== "string") {
+      console.warn("Invalid signature data provided")
+      return false
+    }
+
     // Call the server action to verify the signature
     const response = await fetch("/api/verify-signature", {
       method: "POST",
@@ -88,14 +94,15 @@ export const scanSignatures = async (signatureData: string): Promise<boolean> =>
     })
 
     if (!response.ok) {
-      throw new Error(`Verification failed: ${response.status}`)
+      console.warn(`Verification request failed: ${response.status}`)
+      return false
     }
 
     const result = await response.json()
-    return result.verified
+    return Boolean(result.verified)
   } catch (error) {
-    console.error("Error verifying signature:", error)
-    // In production, you might want to fail on errors
-    return process.env.NODE_ENV === "production" ? false : true
+    console.warn("Error verifying signature:", error)
+    // Return false in production, true in development for testing
+    return process.env.NODE_ENV === "development"
   }
 }
