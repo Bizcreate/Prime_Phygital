@@ -1,160 +1,152 @@
 import jwt from "jsonwebtoken"
 import bcrypt from "bcryptjs"
+import { cookies } from "next/headers"
+import { neon } from "@neondatabase/serverless"
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"
+const sql = neon(process.env.DATABASE_URL!)
 
 export interface User {
   id: string
   email: string
-  name: string
-  role: "admin" | "user" | "customer"
+  firstName: string
+  lastName: string
+  role: string
+  avatarUrl?: string
+  emailVerified: boolean
   createdAt: string
 }
 
-export interface AuthToken {
-  userId: string
-  email: string
-  role: string
-  iat: number
-  exp: number
-}
-
-// Hash password
 export async function hashPassword(password: string): Promise<string> {
-  try {
-    const saltRounds = 12
-    return await bcrypt.hash(password, saltRounds)
-  } catch (error) {
-    console.error("Error hashing password:", error)
-    throw new Error("Failed to hash password")
-  }
+  return bcrypt.hash(password, 10)
 }
 
-// Verify password
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  try {
-    return await bcrypt.compare(password, hashedPassword)
-  } catch (error) {
-    console.error("Error verifying password:", error)
-    return false
-  }
+  return bcrypt.compare(password, hashedPassword)
 }
 
-// Generate JWT token
 export function generateToken(user: User): string {
-  try {
-    const payload = {
+  return jwt.sign(
+    {
       userId: user.id,
       email: user.email,
       role: user.role,
+    },
+    process.env.JWT_SECRET!,
+    { expiresIn: "7d" },
+  )
+}
+
+export function verifyToken(token: string): any {
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET!)
+  } catch (error) {
+    return null
+  }
+}
+
+export async function getCurrentUser(): Promise<User | null> {
+  try {
+    const cookieStore = cookies()
+    const token = cookieStore.get("auth-token")?.value
+
+    if (!token) {
+      return null
     }
 
-    return jwt.sign(payload, JWT_SECRET, {
-      expiresIn: "7d",
-    })
-  } catch (error) {
-    console.error("Error generating token:", error)
-    throw new Error("Failed to generate token")
-  }
-}
-
-// Verify JWT token
-export function verifyToken(token: string): AuthToken | null {
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthToken
-    return decoded
-  } catch (error) {
-    console.error("Error verifying token:", error)
-    return null
-  }
-}
-
-// Extract token from Authorization header
-export function extractTokenFromHeader(authHeader: string | null): string | null {
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null
-  }
-
-  return authHeader.substring(7)
-}
-
-// Get user from token
-export async function getUserFromToken(token: string): Promise<User | null> {
-  try {
     const decoded = verifyToken(token)
     if (!decoded) {
       return null
     }
 
-    // In a real app, you would fetch the user from the database
-    // For now, we'll return a mock user based on the token
+    const users = await sql`
+      SELECT id, email, first_name, last_name, role, avatar_url, email_verified, created_at
+      FROM users
+      WHERE id = ${decoded.userId}
+    `
+
+    if (users.length === 0) {
+      return null
+    }
+
+    const user = users[0]
     return {
-      id: decoded.userId,
-      email: decoded.email,
-      name: decoded.email.split("@")[0],
-      role: decoded.role as "admin" | "user" | "customer",
-      createdAt: new Date().toISOString(),
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      role: user.role,
+      avatarUrl: user.avatar_url,
+      emailVerified: user.email_verified,
+      createdAt: user.created_at,
     }
   } catch (error) {
-    console.error("Error getting user from token:", error)
+    console.error("Error getting current user:", error)
     return null
   }
 }
 
-// Validate email format
-export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
+export async function createUser(email: string, password: string, firstName: string, lastName: string): Promise<User> {
+  const hashedPassword = await hashPassword(password)
 
-// Validate password strength
-export function isValidPassword(password: string): {
-  isValid: boolean
-  errors: string[]
-} {
-  const errors: string[] = []
+  const users = await sql`
+    INSERT INTO users (email, password_hash, first_name, last_name)
+    VALUES (${email}, ${hashedPassword}, ${firstName}, ${lastName})
+    RETURNING id, email, first_name, last_name, role, avatar_url, email_verified, created_at
+  `
 
-  if (password.length < 8) {
-    errors.push("Password must be at least 8 characters long")
-  }
+  const user = users[0]
 
-  if (!/[A-Z]/.test(password)) {
-    errors.push("Password must contain at least one uppercase letter")
-  }
-
-  if (!/[a-z]/.test(password)) {
-    errors.push("Password must contain at least one lowercase letter")
-  }
-
-  if (!/\d/.test(password)) {
-    errors.push("Password must contain at least one number")
-  }
-
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push("Password must contain at least one special character")
-  }
+  // Initialize user rewards
+  await sql`
+    INSERT INTO user_rewards (user_id, total_points, lifetime_points)
+    VALUES (${user.id}, 0, 0)
+  `
 
   return {
-    isValid: errors.length === 0,
-    errors,
+    id: user.id,
+    email: user.email,
+    firstName: user.first_name,
+    lastName: user.last_name,
+    role: user.role,
+    avatarUrl: user.avatar_url,
+    emailVerified: user.email_verified,
+    createdAt: user.created_at,
   }
 }
 
-// Generate random user ID
-export function generateUserId(): string {
-  return `user_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
-}
+export async function authenticateUser(email: string, password: string): Promise<User | null> {
+  const users = await sql`
+    SELECT id, email, password_hash, first_name, last_name, role, avatar_url, email_verified, created_at
+    FROM users
+    WHERE email = ${email}
+  `
 
-// Check if user has required role
-export function hasRole(user: User, requiredRole: string | string[]): boolean {
-  if (Array.isArray(requiredRole)) {
-    return requiredRole.includes(user.role)
+  if (users.length === 0) {
+    return null
   }
-  return user.role === requiredRole
-}
 
-// Sanitize user data for client
-export function sanitizeUser(user: User): Omit<User, "password"> {
-  const { ...sanitized } = user
-  return sanitized
+  const user = users[0]
+  const isValidPassword = await verifyPassword(password, user.password_hash)
+
+  if (!isValidPassword) {
+    return null
+  }
+
+  // Update last login
+  await sql`
+    UPDATE users
+    SET last_login = NOW()
+    WHERE id = ${user.id}
+  `
+
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.first_name,
+    lastName: user.last_name,
+    role: user.role,
+    avatarUrl: user.avatar_url,
+    emailVerified: user.email_verified,
+    createdAt: user.created_at,
+  }
 }

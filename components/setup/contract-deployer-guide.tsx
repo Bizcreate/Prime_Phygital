@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Code, ExternalLink, Rocket, FileText } from "lucide-react"
+import { Code, ExternalLink, Rocket, FileText } from 'lucide-react'
 
 export function ContractDeployerGuide() {
   const contractCode = `// SPDX-License-Identifier: MIT
@@ -63,7 +63,7 @@ contract PrimePhygitalRegistry {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Rocket className="h-5 w-5" />
-            Smart Contract Deployment Guide
+            Step 2: Smart Contract Deployment Guide
           </CardTitle>
           <CardDescription>Deploy your Prime Phygital contracts to each blockchain</CardDescription>
         </CardHeader>
@@ -99,61 +99,64 @@ contract PrimePhygitalRegistry {
 
             <TabsContent value="deploy" className="space-y-4">
               <div className="space-y-4">
-                <div className="grid gap-4">
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">1</span>
-                      Choose Deployment Method
-                    </h4>
-                    <div className="grid gap-2 md:grid-cols-3">
-                      <Button variant="outline" className="justify-start bg-transparent">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Remix IDE (Easiest)
-                      </Button>
-                      <Button variant="outline" className="justify-start bg-transparent">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Hardhat (Advanced)
-                      </Button>
-                      <Button variant="outline" className="justify-start bg-transparent">
-                        <Code className="h-4 w-4 mr-2" />
-                        Foundry (Pro)
-                      </Button>
-                    </div>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">1</span>
+                    Choose Deployment Method
+                  </h4>
+                  <div className="grid gap-2 md:grid-cols-3">
+                    <Button variant="outline" className="justify-start bg-transparent">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Remix IDE (Easiest)
+                    </Button>
+                    <Button variant="outline" className="justify-start bg-transparent">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Hardhat (Advanced)
+                    </Button>
+                    <Button variant="outline" className="justify-start bg-transparent">
+                      <Code className="h-4 w-4 mr-2" />
+                      Foundry (Pro)
+                    </Button>
                   </div>
+                </div>
 
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">2</span>
-                      Deploy to Each Chain
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <p>Deploy the same contract to each chain you want to support:</p>
-                      <ul className="list-disc list-inside ml-4 space-y-1 text-gray-600">
-                        <li>Ethereum Mainnet (expensive gas)</li>
-                        <li>Polygon (cheap gas, recommended)</li>
-                        <li>Base (Coinbase L2)</li>
-                        <li>Arbitrum (fast L2)</li>
-                        <li>Optimism (stable L2)</li>
-                        <li>Abstract (if available)</li>
-                        <li>ApeCoin (if available)</li>
-                      </ul>
-                    </div>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">2</span>
+                    Deploy to Each Mainnet Chain
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <p>Deploy the same contract to each *mainnet* chain you want to support:</p>
+                    <ul className="list-disc list-inside ml-4 space-y-1 text-gray-600">
+                      <li>Ethereum Mainnet (expensive gas)</li>
+                      <li>Polygon Mainnet (cheap gas, recommended)</li>
+                      <li>Base Mainnet (Coinbase L2)</li>
+                      <li>Arbitrum Mainnet (fast L2)</li>
+                      <li>Optimism Mainnet (stable L2)</li>
+                      <li>Abstract Mainnet (if available)</li>
+                      <li>ApeCoin Mainnet (if available)</li>
+                    </ul>
+                    <p className="text-red-600 font-semibold">
+                      ⚠️ Ensure you are deploying to the *mainnet* (production) version of the network, not a testnet.
+                    </p>
                   </div>
+                </div>
 
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">3</span>
-                      Update Environment Variables
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <p>After deployment, update your .env.local with the contract addresses:</p>
-                      <code className="block p-2 bg-gray-100 rounded text-xs">
-                        NEXT_PUBLIC_ETHEREUM_CONTRACT_ADDRESS=0xYourDeployedAddress
-                        <br />
-                        NEXT_PUBLIC_POLYGON_CONTRACT_ADDRESS=0xYourDeployedAddress
-                        <br /># ... etc for each chain
-                      </code>
-                    </div>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">3</span>
+                    Save Contract Addresses
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <p>
+                      After each successful deployment, you will receive a unique contract address. **Save these
+                      addresses carefully!** You will need them for your environment variables.
+                    </p>
+                    <code className="block p-2 bg-gray-100 rounded text-xs">
+                      Example: 0x123abc... (Ethereum Contract Address)
+                      <br />
+                      Example: 0xdef456... (Polygon Contract Address)
+                    </code>
                   </div>
                 </div>
               </div>
@@ -169,17 +172,21 @@ contract PrimePhygitalRegistry {
                     <div className="p-3 border rounded">
                       <h5 className="font-medium">Remix IDE</h5>
                       <p className="text-sm text-gray-600">Browser-based, no setup required</p>
-                      <Button size="sm" variant="outline" className="mt-2 bg-transparent">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Open Remix
+                      <Button size="sm" variant="outline" className="mt-2 bg-transparent" asChild>
+                        <a href="https://remix.ethereum.org/" target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Open Remix
+                        </a>
                       </Button>
                     </div>
                     <div className="p-3 border rounded">
                       <h5 className="font-medium">thirdweb Deploy</h5>
                       <p className="text-sm text-gray-600">One-click multi-chain deployment</p>
-                      <Button size="sm" variant="outline" className="mt-2 bg-transparent">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Try thirdweb
+                      <Button size="sm" variant="outline" className="mt-2 bg-transparent" asChild>
+                        <a href="https://thirdweb.com/deploy" target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Try thirdweb
+                        </a>
                       </Button>
                     </div>
                   </CardContent>
@@ -193,17 +200,21 @@ contract PrimePhygitalRegistry {
                     <div className="p-3 border rounded">
                       <h5 className="font-medium">Hardhat</h5>
                       <p className="text-sm text-gray-600">Professional development environment</p>
-                      <Button size="sm" variant="outline" className="mt-2 bg-transparent">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Hardhat Docs
+                      <Button size="sm" variant="outline" className="mt-2 bg-transparent" asChild>
+                        <a href="https://hardhat.org/docs" target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Hardhat Docs
+                        </a>
                       </Button>
                     </div>
                     <div className="p-3 border rounded">
                       <h5 className="font-medium">Foundry</h5>
                       <p className="text-sm text-gray-600">Fast, modern toolkit</p>
-                      <Button size="sm" variant="outline" className="mt-2 bg-transparent">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Foundry Book
+                      <Button size="sm" variant="outline" className="mt-2 bg-transparent" asChild>
+                        <a href="https://book.getfoundry.sh/" target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Foundry Book
+                        </a>
                       </Button>
                     </div>
                   </CardContent>

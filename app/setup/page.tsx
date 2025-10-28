@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Check, ExternalLink, Zap, Shield, Mail, Key, Globe } from "lucide-react"
+import { Check, ExternalLink, Zap, Shield, Mail, Key, Globe, Rocket } from 'lucide-react'
 import { useToast } from "@/components/ui/use-toast"
 import { AlchemySingleAppGuide } from "@/components/setup/alchemy-single-app-guide"
+import { ContractDeployerGuide } from "@/components/setup/contract-deployer-guide" // Import the guide
 
 export default function SetupPage() {
   const { toast } = useToast()
@@ -56,6 +57,7 @@ export default function SetupPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="nfc">NFC Setup</TabsTrigger>
           <TabsTrigger value="blockchain">Blockchain</TabsTrigger>
+          <TabsTrigger value="contract-deploy">Contract Deploy</TabsTrigger> {/* New Tab */}
           <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="deployment">Deploy</TabsTrigger>
           <TabsTrigger value="testing">Testing</TabsTrigger>
@@ -118,6 +120,7 @@ export default function SetupPage() {
                 {[
                   { id: "nfc", title: "Generate NFC verification key", time: "1 min" },
                   { id: "alchemy", title: "Create single Alchemy app with multiple chains", time: "3 min" },
+                  { id: "contract-deploy", title: "Deploy Smart Contracts to Mainnet", time: "10-30 min" }, // New step
                   { id: "resend", title: "Configure Resend for emails", time: "2 min" },
                   { id: "env", title: "Add environment variables", time: "2 min" },
                   { id: "deploy", title: "Deploy to Vercel", time: "3 min" },
@@ -196,13 +199,53 @@ export default function SetupPage() {
           <AlchemySingleAppGuide />
         </TabsContent>
 
+        {/* Contract Deployment Tab */}
+        <TabsContent value="contract-deploy" className="space-y-4">
+          <ContractDeployerGuide />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Rocket className="h-5 w-5" />
+                Step 3: Update Environment Variables with Deployed Contract Addresses
+              </CardTitle>
+              <CardDescription>
+                After deploying your smart contracts, update your `.env.local` and Vercel environment variables.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-800 mb-2">💡 Important!</h4>
+                <p className="text-blue-700 text-sm">
+                  For each blockchain network you deployed to, you will get a unique contract address. You need to add
+                  these to your environment variables so your application knows where to interact with your contracts.
+                </p>
+              </div>
+              <div className="bg-muted p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Example .env.local entries:</h4>
+                <code className="block p-2 bg-gray-100 rounded text-xs">
+                  NEXT_PUBLIC_ETHEREUM_CONTRACT_ADDRESS=0xYourEthereumContractAddressHere
+                  <br />
+                  NEXT_PUBLIC_POLYGON_CONTRACT_ADDRESS=0xYourPolygonContractAddressHere
+                  <br />
+                  NEXT_PUBLIC_BASE_CONTRACT_ADDRESS=0xYourBaseContractAddressHere
+                  <br />
+                  {/* Add more as needed for other chains */}
+                </code>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Make sure to replace `0xYour...ContractAddressHere` with the actual addresses from your deployment.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Email Tab */}
         <TabsContent value="email" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Mail className="h-5 w-5" />
-                Step 3: Set Up Resend for Email (Optional)
+                Step 4: Set Up Resend for Email (Optional)
               </CardTitle>
               <CardDescription>Send verification emails and notifications to users</CardDescription>
             </CardHeader>
@@ -275,7 +318,7 @@ export default function SetupPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe className="h-5 w-5" />
-                Step 4: Deploy to Vercel
+                Step 5: Deploy to Vercel
               </CardTitle>
               <CardDescription>Deploy your Prime Phygital platform with one click</CardDescription>
             </CardHeader>
@@ -311,7 +354,9 @@ export default function SetupPage() {
                     <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">3</span>
                     <div>
                       <p className="font-medium">Add Environment Variables</p>
-                      <p className="text-muted-foreground">Copy all your .env.local variables to Vercel</p>
+                      <p className="text-muted-foreground">
+                        Copy all your .env.local variables (including new contract addresses) to Vercel
+                      </p>
                     </div>
                   </li>
                   <li className="flex items-start gap-2">
@@ -347,7 +392,7 @@ export default function SetupPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Check className="h-5 w-5" />
-                Step 5: Test Your Setup
+                Step 6: Test Your Setup
               </CardTitle>
               <CardDescription>Verify that everything is working correctly</CardDescription>
             </CardHeader>
